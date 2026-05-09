@@ -1254,7 +1254,7 @@ textarea{resize:vertical;min-height:55px}
 <div id="splashOverlay">
   <div class="splash-box">
     <div class="splash-title">✈ SIMPLIFLY</div>
-    <div class="splash-sub">AIR NAVIGATION SYSTEM</div>
+    <div class="splash-sub">CIVIL AIR NAVIGATION SYSTEM</div>
 
     <div class="splash-section">
       <div class="splash-section-title">⚠️ IMPORTANT DISCLAIMER</div>
@@ -1347,6 +1347,7 @@ textarea{resize:vertical;min-height:55px}
   <button class="btn btn-amber full" id="profileChangePassBtn" style="font-size:11px;letter-spacing:1px;margin-bottom:6px">🔑 CHANGE PASSWORD</button>
   <div class="profile-msg" id="profilePassMsg"></div>
   <button class="btn btn-red full" id="profileLogoutBtn" style="font-size:11px;letter-spacing:1px">⏻ SIGN OUT</button>
+  <button onclick="if(window.showRegionSelector)window.showRegionSelector();closeProfilePopup();" class="btn full" style="font-size:11px;letter-spacing:1px;margin-top:6px;background:rgba(61,184,245,0.1);border-color:rgba(61,184,245,0.4);color:var(--accent-cyan)">🌍 CHANGE HOME REGION</button>
   <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-dim);text-align:center">
     <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">ADMIN CONTACT</div>
     <a href="mailto:sadman.aikyo3223@gmail.com" style="font-family:var(--font-mono);font-size:10px;color:var(--accent-cyan);text-decoration:none">📧 sadman.aikyo3223@gmail.com</a>
@@ -1380,7 +1381,7 @@ textarea{resize:vertical;min-height:55px}
   <!-- Header -->
 <div class="sidebar-header">
     <h1>SIMPLIFLY</h1>
-    <div class="subtitle">AIR NAVIGATION SYSTEM</div>
+    <div class="subtitle">CIVIL AIR NAVIGATION SYSTEM</div>
     <div style="display:flex;gap:10px;margin-top:8px">
       <div style="flex:1;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:var(--radius);padding:5px 8px;text-align:center">
         <div style="font-family:var(--font-display);font-size:8px;letter-spacing:2px;color:var(--text-dim);margin-bottom:2px">GMT / ZULU</div>
@@ -1625,7 +1626,7 @@ textarea{resize:vertical;min-height:55px}
 <div id="adminBtnContainer" style="display:none;padding:8px 14px 0">
   <button id="openAdminPanelBtn" class="btn full" style="background:rgba(255,171,0,0.14);border-color:rgba(255,171,0,0.6);color:var(--accent-amber);font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:1.5px">⚙️ ADMIN PANEL</button>
 </div>
-<div id="credit">SIMPLIFLY · AVIATION EDITION</div>
+<div id="credit">SIMPLIFLY · CIVIL AVIATION EDITION</div>
 <div style="text-align:center;padding:4px 14px 10px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">
   📧 <a href="mailto:sadman.aikyo3223@gmail.com" style="color:var(--text-dim);text-decoration:none">sadman.aikyo3223@gmail.com</a>
 </div>
@@ -2167,7 +2168,7 @@ textarea{resize:vertical;min-height:55px}
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo">SIMPLIFLY</div>
-    <div class="auth-subtitle">AIR NAVIGATION SYSTEM</div>
+    <div class="auth-subtitle">CIVIL AIR NAVIGATION SYSTEM</div>
     <div id="authLogin">
       <div class="auth-title">SIGN IN</div>
       <div class="auth-field"><label>EMAIL</label><input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email"></div>
@@ -2331,7 +2332,7 @@ function initializeApp(){
   checkSecureContextAndWarn();
 
   /* -- MAP INIT -- */
-  const map=L.map('map',{zoomControl:true,dragging:true,touchZoom:true,doubleClickZoom:true,scrollWheelZoom:true}).setView([23.685,90.3563],7);
+  const map=L.map('map',{zoomControl:true,dragging:true,touchZoom:true,doubleClickZoom:true,scrollWheelZoom:true}).setView([20.0,0.0],2);
   window._mapInstance=map; // for sidebar toggle invalidateSize
 
   // Stop floating buttons from triggering map clicks — Android WebView / APK
@@ -4831,7 +4832,7 @@ document.getElementById('importBtn').onclick=()=>{
       </div>
     </div>
 
-    <div class="credit">SIMPLIFLY · AIR NAVIGATION SYSTEM</div>
+    <div class="credit">SIMPLIFLY · CIVIL AIR NAVIGATION SYSTEM</div>
     <script>window.onload=function(){window.print();};<\/script>
     </body></html>`;
 
@@ -4994,7 +4995,7 @@ document.getElementById('importBtn').onclick=()=>{
     <div class="notam" style="min-height:28px">${g('bf_special').replace(/\n/g,'<br>')}</div>
 
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;border-top:1px solid #ccc;padding-top:8px">
-      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
+      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; CIVIL AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
       <div style="text-align:center;min-width:200px">
         <div style="border-bottom:1px solid #000;height:36px;margin-bottom:4px"></div>
         <div style="font-size:9px;font-weight:700;letter-spacing:1px">SIGNATURE OF PIC</div>
@@ -5217,7 +5218,7 @@ document.getElementById('importBtn').onclick=()=>{
     <div class="notam" style="min-height:28px">${g('bf_special').replace(/\n/g,'<br>')}</div>
 
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;border-top:1px solid #ccc;padding-top:8px">
-      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
+      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; CIVIL AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
       <div style="text-align:center;min-width:200px">
         <div style="border-bottom:1px solid #000;height:36px;margin-bottom:4px"></div>
         <div style="font-size:9px;font-weight:700;letter-spacing:1px">SIGNATURE OF PIC</div>
@@ -6317,6 +6318,7 @@ window.closeCrewPopup = function(){
       var data=snap.val()||{}; currentUserData=data; currentUserData.uid=user.uid;
       if(data.status==='approved'){
         authScreen.classList.add('hidden');
+        if(window._checkShowRegionSelector) window._checkShowRegionSelector();
         if(data.role==='admin') document.getElementById('adminBtnContainer').style.display='block';
         // Populate profile strip
         var n=data.displayName||user.email||'USER', r=data.role||'user';
@@ -7153,6 +7155,166 @@ window.closeCrewPopup = function(){
   })();
 
 })();
+
+/* ====================================================
+   REGION / HOME AREA SELECTOR
+==================================================== */
+(function(){
+  var REGION_KEY = 'simplifly_home_region';
+
+  // ── Region presets ──────────────────────────────────
+  var REGIONS = [
+    { name:'Bangladesh',      flag:'🇧🇩', lat:23.685,  lon:90.356,  zoom:7  },
+    { name:'India',           flag:'🇮🇳', lat:22.5,    lon:80.0,    zoom:5  },
+    { name:'Nepal',           flag:'🇳🇵', lat:28.0,    lon:84.0,    zoom:7  },
+    { name:'Sri Lanka',       flag:'🇱🇰', lat:7.8,     lon:80.7,    zoom:8  },
+    { name:'Myanmar',         flag:'🇲🇲', lat:19.5,    lon:96.0,    zoom:6  },
+    { name:'Thailand',        flag:'🇹🇭', lat:13.7,    lon:100.5,   zoom:6  },
+    { name:'Malaysia',        flag:'🇲🇾', lat:4.2,     lon:108.0,   zoom:6  },
+    { name:'Singapore',       flag:'🇸🇬', lat:1.36,    lon:103.82,  zoom:11 },
+    { name:'Indonesia',       flag:'🇮🇩', lat:-3.5,    lon:117.0,   zoom:5  },
+    { name:'Philippines',     flag:'🇵🇭', lat:12.0,    lon:122.0,   zoom:6  },
+    { name:'Vietnam',         flag:'🇻🇳', lat:16.0,    lon:107.8,   zoom:6  },
+    { name:'UAE',             flag:'🇦🇪', lat:24.5,    lon:54.5,    zoom:7  },
+    { name:'Saudi Arabia',    flag:'🇸🇦', lat:24.0,    lon:45.0,    zoom:6  },
+    { name:'Qatar',           flag:'🇶🇦', lat:25.3,    lon:51.2,    zoom:9  },
+    { name:'Oman',            flag:'🇴🇲', lat:22.0,    lon:57.5,    zoom:7  },
+    { name:'Pakistan',        flag:'🇵🇰', lat:30.0,    lon:69.0,    zoom:6  },
+    { name:'Kenya',           flag:'🇰🇪', lat:0.5,     lon:37.5,    zoom:7  },
+    { name:'Nigeria',         flag:'🇳🇬', lat:9.0,     lon:8.0,     zoom:6  },
+    { name:'South Africa',    flag:'🇿🇦', lat:-29.0,   lon:25.0,    zoom:6  },
+    { name:'Australia',       flag:'🇦🇺', lat:-26.0,   lon:133.0,   zoom:5  },
+    { name:'New Zealand',     flag:'🇳🇿', lat:-41.5,   lon:172.5,   zoom:6  },
+    { name:'United Kingdom',  flag:'🇬🇧', lat:54.0,    lon:-2.0,    zoom:6  },
+    { name:'Germany',         flag:'🇩🇪', lat:51.2,    lon:10.5,    zoom:6  },
+    { name:'France',          flag:'🇫🇷', lat:46.5,    lon:2.5,     zoom:6  },
+    { name:'USA (East)',      flag:'🇺🇸', lat:38.0,    lon:-78.0,   zoom:5  },
+    { name:'USA (West)',      flag:'🇺🇸', lat:37.0,    lon:-116.0,  zoom:5  },
+    { name:'Canada',          flag:'🇨🇦', lat:56.0,    lon:-96.0,   zoom:4  },
+    { name:'Brazil',          flag:'🇧🇷', lat:-12.0,   lon:-52.0,   zoom:5  },
+    { name:'China',           flag:'🇨🇳', lat:35.0,    lon:105.0,   zoom:5  },
+    { name:'Japan',           flag:'🇯🇵', lat:36.5,    lon:138.0,   zoom:6  },
+  ];
+
+  var selected = null; // currently highlighted preset
+
+  // ── Apply saved region to map ─────────────────────
+  function applyRegion(r){
+    if(window._mapInstance){
+      window._mapInstance.setView([r.lat, r.lon], r.zoom);
+    }
+  }
+
+  // ── Load saved region on app start ───────────────
+  var saved = localStorage.getItem(REGION_KEY);
+  if(saved){
+    try{
+      var r = JSON.parse(saved);
+      // Apply after map is ready (slight delay)
+      setTimeout(function(){ applyRegion(r); }, 300);
+    }catch(e){}
+  }
+
+  // ── Build the grid of region buttons ─────────────
+  function buildGrid(){
+    var grid = document.getElementById('regionGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    REGIONS.forEach(function(r, i){
+      var btn = document.createElement('div');
+      btn.style.cssText = [
+        'border:1px solid var(--border-glow)',
+        'border-radius:6px',
+        'padding:8px 10px',
+        'cursor:pointer',
+        'background:var(--bg-elevated)',
+        'transition:all 0.15s',
+        'display:flex',
+        'align-items:center',
+        'gap:7px',
+        'font-size:12px',
+        'color:var(--text-secondary)',
+        'user-select:none'
+      ].join(';');
+
+      btn.innerHTML =
+        '<span style="font-size:16px">' + r.flag + '</span>' +
+        '<span style="font-family:var(--font-ui);font-size:11px;font-weight:600">' + r.name + '</span>';
+
+      btn.onclick = function(){
+        // Deselect all
+        grid.querySelectorAll('div').forEach(function(b){
+          b.style.background = 'var(--bg-elevated)';
+          b.style.borderColor = 'var(--border-glow)';
+          b.style.color = 'var(--text-secondary)';
+        });
+        // Select this
+        btn.style.background = 'rgba(26,111,204,0.25)';
+        btn.style.borderColor = 'var(--accent-blue)';
+        btn.style.color = 'var(--text-bright)';
+        selected = r;
+        // Clear custom fields
+        document.getElementById('regionCustomLat').value = '';
+        document.getElementById('regionCustomLon').value = '';
+      };
+
+      grid.appendChild(btn);
+    });
+  }
+
+  // ── Show modal ────────────────────────────────────
+  window.showRegionSelector = function(){
+    var modal = document.getElementById('regionModal');
+    if(!modal) return;
+    selected = null;
+    buildGrid();
+    modal.style.display = 'flex';
+  };
+
+  // ── Save button ───────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function(){
+    var saveBtn = document.getElementById('regionSaveBtn');
+    if(!saveBtn) return;
+
+    saveBtn.onclick = function(){
+      var region;
+
+      // Custom coords take priority if filled in
+      var customLat  = parseFloat(document.getElementById('regionCustomLat').value);
+      var customLon  = parseFloat(document.getElementById('regionCustomLon').value);
+      var customZoom = parseInt(document.getElementById('regionCustomZoom').value) || 7;
+
+      if(!isNaN(customLat) && !isNaN(customLon)){
+        region = { name:'Custom', flag:'📍', lat:customLat, lon:customLon, zoom:customZoom };
+      } else if(selected){
+        region = selected;
+      } else {
+        // Highlight the grid to prompt selection
+        var grid = document.getElementById('regionGrid');
+        if(grid){
+          grid.style.outline = '2px solid var(--accent-red)';
+          grid.style.borderRadius = '6px';
+          setTimeout(function(){ grid.style.outline = ''; }, 1500);
+        }
+        alert('Please select a region or enter custom coordinates.');
+        return;
+      }
+
+      localStorage.setItem(REGION_KEY, JSON.stringify(region));
+      applyRegion(region);
+      document.getElementById('regionModal').style.display = 'none';
+    };
+  });
+
+  // ── Auto-show on first login if no region saved ──
+  window._checkShowRegionSelector = function(){
+    if(!localStorage.getItem(REGION_KEY)){
+      setTimeout(function(){ window.showRegionSelector(); }, 600);
+    }
+  };
+
+})();
+
 </script>
 
 <!-- Dark Leaflet overrides -->
@@ -7232,5 +7394,61 @@ window.closeCrewPopup = function(){
   </div>
 </div>
 
+
+<!-- ══ REGION SELECTOR MODAL ══ -->
+<div id="regionModal" style="
+  position:fixed;left:0;top:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.92);z-index:99998;
+  display:none;align-items:center;justify-content:center;
+  padding:16px;backdrop-filter:blur(6px);font-family:var(--font-ui)">
+  <div style="
+    background:var(--bg-panel);border:1px solid var(--border-glow);
+    border-radius:12px;width:100%;max-width:440px;
+    max-height:90vh;overflow-y:auto;padding:22px 20px;
+    box-shadow:0 0 40px rgba(26,111,204,0.25)">
+    <div style="font-family:var(--font-display);font-size:14px;font-weight:700;
+      letter-spacing:2px;color:var(--accent-cyan);margin-bottom:6px;text-align:center">
+      🌍 SELECT YOUR OPERATING REGION
+    </div>
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);
+      text-align:center;margin-bottom:16px;letter-spacing:0.5px">
+      The map will open centred on this region every time you launch SIMPLIFLY.
+      You can change this later in Settings.
+    </div>
+    <div id="regionGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px"></div>
+    <div style="margin-bottom:14px">
+      <div style="font-family:var(--font-display);font-size:9px;letter-spacing:2px;
+        color:var(--text-dim);margin-bottom:6px">OR ENTER CUSTOM COORDINATES</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div>
+          <div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:2px">LATITUDE</div>
+          <input type="number" id="regionCustomLat" placeholder="e.g. 25.2" step="0.01"
+            style="width:100%;padding:8px 10px;background:var(--bg-deep);color:var(--text-primary);
+            border:1px solid var(--border-glow);border-radius:var(--radius);
+            font-family:var(--font-mono);font-size:12px;outline:none"/>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:2px">LONGITUDE</div>
+          <input type="number" id="regionCustomLon" placeholder="e.g. 55.3" step="0.01"
+            style="width:100%;padding:8px 10px;background:var(--bg-deep);color:var(--text-primary);
+            border:1px solid var(--border-glow);border-radius:var(--radius);
+            font-family:var(--font-mono);font-size:12px;outline:none"/>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-top:4px">
+        ZOOM LEVEL (1–16, default 7)
+      </div>
+      <input type="number" id="regionCustomZoom" placeholder="7" min="1" max="16" value="7"
+        style="width:100%;padding:8px 10px;margin-top:2px;background:var(--bg-deep);color:var(--text-primary);
+        border:1px solid var(--border-glow);border-radius:var(--radius);
+        font-family:var(--font-mono);font-size:12px;outline:none"/>
+    </div>
+    <button id="regionSaveBtn" class="btn btn-blue full" style="
+      font-family:var(--font-display);font-size:12px;font-weight:700;
+      letter-spacing:1.5px;padding:12px">
+      ✅ SAVE &amp; OPEN MAP
+    </button>
+  </div>
+</div>
 </body>
 </html>

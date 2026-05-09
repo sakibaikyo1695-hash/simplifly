@@ -5,7 +5,7 @@
 <title>SIMPLIFLY | Air Navigation</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0f1a">
+<meta name="theme-color" content="#0e1117">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -33,26 +33,27 @@ fbAuth.setPersistence('local').catch(function(){});
 <style>
 /* ======== ROOT VARIABLES ======== */
 :root{
-  --bg-deep:#04080f;
-  --bg-panel:#080e1a;
-  --bg-card:#0d1525;
-  --bg-elevated:#111c30;
-  --border-dim:#1a2840;
-  --border-glow:#1e3a5f;
-  --accent-blue:#0af;
-  --accent-cyan:#00e5ff;
-  --accent-green:#00e676;
-  --accent-amber:#ffab00;
-  --accent-red:#ff1744;
-  --accent-purple:#7c4dff;
-  --text-primary:#d0e8ff;
-  --text-secondary:#7899b8;
-  --text-dim:#3a5070;
-  --text-bright:#e8f4ff;
-  --glow-blue:0 0 12px rgba(0,170,255,0.45);
-  --glow-green:0 0 12px rgba(0,230,118,0.45);
-  --glow-red:0 0 12px rgba(255,23,68,0.45);
-  --glow-amber:0 0 12px rgba(255,171,0,0.45);
+  /* Civil Aviation / EFB Colour Scheme */
+  --bg-deep:#0e1117;
+  --bg-panel:#161b25;
+  --bg-card:#1c2230;
+  --bg-elevated:#222c3c;
+  --border-dim:#2a3448;
+  --border-glow:#2e4a7a;
+  --accent-blue:#1a6fcc;
+  --accent-cyan:#3db8f5;
+  --accent-green:#27ae60;
+  --accent-amber:#e67e22;
+  --accent-red:#c0392b;
+  --accent-purple:#8e44ad;
+  --text-primary:#dce8f5;
+  --text-secondary:#8aa4c0;
+  --text-dim:#4a6080;
+  --text-bright:#f0f6ff;
+  --glow-blue:0 0 10px rgba(26,111,204,0.4);
+  --glow-green:0 0 10px rgba(39,174,96,0.4);
+  --glow-red:0 0 10px rgba(192,57,43,0.4);
+  --glow-amber:0 0 10px rgba(230,126,34,0.4);
   --radius:6px;
   --sidebar-w:340px;
   --font-ui:'Rajdhani',sans-serif;
@@ -74,39 +75,18 @@ html,body{
   overflow:hidden;
 }
 
-/* ======== HOLDING ENTRY CALCULATOR ======== */
-.hold-result-box{
-  background:var(--bg-deep);
-  border-radius:5px;
-  padding:8px 10px;
-  font-family:var(--font-mono);
-  font-size:11px;
-  line-height:1.8;
-  margin-top:8px;
-  border-left:3px solid var(--accent-cyan);
-}
-.hold-entry-direct  { border-left-color:#00e676; }
-.hold-entry-parallel{ border-left-color:#0af; }
-.hold-entry-teardrop{ border-left-color:#ffab00; }
-.hold-entry-either  { border-left-color:#7c4dff; }
-.hold-entry-type{
-  font-family:var(--font-display);
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:1.5px;
-  margin-bottom:4px;
-}
+/* Holding calc CSS removed */
 
 /* ======== MAP ======== */
 #map{
   position:fixed;
   top:0;bottom:0;left:0;
   right:var(--sidebar-w);
-  background:#0a0a0a;
+  background:#0e1117;
   transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
 }
 .leaflet-control-attribution{display:none !important}
-.leaflet-container{background:#0a0a0a}
+.leaflet-container{background:#0e1117}
 
 body.sidebar-collapsed #map{right:0}
 
@@ -1204,66 +1184,68 @@ textarea{resize:vertical;min-height:55px}
     </div>
     <div style="font-family:var(--font-ui);font-size:13px;color:var(--text-secondary);line-height:1.8">
 
+      <div style="background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#e88;">
+        ⚠️ <b style="color:var(--text-bright)">SIMPLIFLY is a planning aid only.</b> It is NOT a certified navigation system. Always use approved charts and instruments as primary references.
+      </div>
+
       <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">1. GETTING STARTED</div>
-      <p>Open the app via your browser or home screen shortcut. Sign in with your registered account. The map loads. You can jump to any coordinates using the Jump to Coordinates section. The <b style="color:var(--text-bright)">sidebar</b> is on the right (desktop) or bottom (iPad). Collapse/expand it with the arrow tab button.</p>
+      <p>Open the app via your browser or add it to your iPad/phone Home Screen as a PWA for a full-screen experience. Sign in with your registered account — new accounts require admin approval before access is granted. The <b style="color:var(--text-bright)">sidebar</b> is on the right — tap the blue tab on the edge to collapse or expand it for a full-screen map view.</p>
 
       <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">2. MAP LAYERS</div>
-      <p>Use the <b style="color:var(--text-bright)">Map Layer</b> buttons to switch between: 🗺️ Normal (OpenStreetMap), 🛰️ Satellite (Esri), ⛰️ Topo (terrain), 🌑 Dark (night), 🗾 ESRI Topo. The quick-toggle button on the top-left of the map switches between Normal and Satellite instantly.</p>
+      <p>Tap the <b style="color:var(--text-bright)">🛰️ SATELLITE</b> button on the top-left of the map to instantly toggle between Normal and Satellite view. Additional layers are available: ⛰️ Topo (terrain contours), 🌑 Dark (low-light), and 🗾 ESRI Topo. Normal (OpenStreetMap) is recommended for most VFR planning.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">3. ADDING WAYPOINTS</div>
-      <p><b>By tapping the map:</b> Tap any point → a confirmation dialog appears → tap YES, CREATE → enter name and optional notes.<br>
-      <b>By coordinates:</b> Use the <b style="color:var(--text-bright)">Jump to Coordinates</b> section → enter Lat/Lon in DMS format → tap GO / ADD WAYPOINT.<br>
-      Waypoints appear as coloured markers. Each marker type has a symbol: ● Default (red), H Helipad (blue), ★ Important (gold), ◆ Checkpoint (silver), ▲ Marker (white), ■ Airport (green).</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">3. ADDING WAYPOINTS (FIXES)</div>
+      <p><b>By tapping the map:</b> Tap any location → confirm → enter the fix name (e.g. AGAXY, VOR name, airfield ICAO) and any notes.<br>
+      <b>By coordinates:</b> Enter Lat/Lon in the <b style="color:var(--text-bright)">Jump to Coordinates</b> section using degrees and decimal minutes (DMS format) → tap <b style="color:var(--text-bright)">🎯 GO / ADD WAYPOINT</b>.<br>
+      Marker types: ■ Airport (green), H Helipad (blue), ★ Compulsory reporting point (gold), ◆ Checkpoint (silver), ● Fix/Waypoint (red), ▲ Position (white).</p>
 
       <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">4. WAYPOINT LIST & SEARCH</div>
-      <p>Tap <b style="color:var(--text-bright)">📋 LIST</b> next to Waypoints. A modal opens showing all waypoints. Use the <b style="color:var(--text-bright)">search bar</b> at the top to filter by name instantly. Each entry shows Edit, Delete, Select, and (if plates exist) a 📄 Plates button.</p>
+      <p>Tap <b style="color:var(--text-bright)">📋 LIST</b> to open the full waypoints list. Use the search bar to filter by name instantly. From the list you can Edit, Delete, Select for routing, or open stored Approach Plates for that fix.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">5. EDITING A WAYPOINT</div>
-      <p>Tap a marker on the map → popup appears → tap <b style="color:var(--text-bright)">Edit</b>. Or use the 📋 LIST modal. The edit screen lets you change: Name, Latitude, Longitude, Marker Type, Info/Notes, and add Approach Plates (PDFs).</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">5. APPROACH PLATES (PDFs)</div>
+      <p>Each waypoint/airport can store one or more approach plate PDFs. In the <b style="color:var(--text-bright)">Edit Waypoint</b> modal, scroll to <b style="color:var(--accent-amber)">📄 APPROACH PLATES</b> → tap ➕ ADD PLATE → select your PDF files. They are stored locally on the device.<br>
+      <b>Viewing:</b> Tap the marker on the map → tap 📄 Plates, or use the waypoint list. The full-screen viewer shows all pages with PREV / NEXT navigation.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">6. APPROACH PLATES (PDFs)</div>
-      <p>In the Edit Waypoint modal, scroll to the <b style="color:var(--accent-amber)">📄 APPROACH PLATES</b> section. Tap <b style="color:var(--text-bright)">➕ ADD PLATE (PDF)</b> to pick one or more PDF files. They are saved inside the app.<br>
-      <b>Viewing:</b> From the map popup → tap 📄 N Plate(s). From the Waypoints List → tap 📄 Plates. A full-screen viewer opens with PREV / NEXT buttons to navigate between plates. All PDF pages are shown. Tap ✖ CLOSE to return.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">6. ROUTE PLANNING</div>
+      <p>Select 2 or more waypoints (tap markers or use 🎯 Sel in the list — they highlight blue). Enter your cruise speed in knots in the <b style="color:var(--text-bright)">SPEED</b> field. Tap <b style="color:var(--text-bright)">⛓ ROUTE</b> to draw the route. Each leg shows: distance (NM), magnetic bearing, and estimated time. Tap <b style="color:var(--text-bright)">💾 SAVE ROUTE</b> to store it for reuse. Load saved routes via <b style="color:var(--text-bright)">📂 SAVED ROUTES</b>.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">7. BUILDING A ROUTE</div>
-      <p>Select 2 or more waypoints by tapping them (they highlight blue) or using 🎯 Sel in the list. Tap <b style="color:var(--text-bright)">⛓ ROUTE</b> to draw the route line. The Route Summary below shows each leg: distance, bearing, and ETA. Enter your speed in knots in the SPEED field for accurate ETAs. Tap ✖ CLEAR ROUTE to reset.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">7. GPS TRACKING (AIRBORNE)</div>
+      <p>Tap <b style="color:var(--text-bright)">✈️ FLY ON</b> to activate live GPS. Your aircraft position is shown on the map and updates continuously. GPS Ground Speed and Track are displayed. Tap <b style="color:var(--text-bright)">📡 TRACK ON</b> to project a 20-minute track line ahead based on current speed and course.<br>
+      <b>Note:</b> GPS requires a secure HTTPS connection and browser location permission. Use Safari on iOS for best results.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">8. SAVING & LOADING ROUTES</div>
-      <p>After building a route, tap <b style="color:var(--text-bright)">💾 SAVE ROUTE</b> → enter a name → confirm. View saved routes via <b style="color:var(--text-bright)">📂 SAVED ROUTES</b>. Each saved route can be edited (rename), shown on map, or deleted. Routes remember the waypoint IDs used — if waypoints are deleted, re-add them before showing the route.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">8. DIRECT-TO NAVIGATION</div>
+      <p>In Flying Mode, select a destination from the <b style="color:var(--text-bright)">Direct-To</b> dropdown → tap ➤ DIRECT-TO. A dashed line draws from your current GPS position to the waypoint, showing live distance, bearing, and ETA. Tap ⏹ STOP to cancel. This is useful for quick diversions.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">9. FLYING MODE & GPS</div>
-      <p>Tap <b style="color:var(--text-bright)">✈️ FLY ON</b> to activate GPS tracking. A helicopter icon follows your position. GPS Speed and Course are displayed live. Tap ⏹ FLY OFF to stop. <b>Note:</b> GPS requires HTTPS (your GitHub Pages link) and location permission granted in the browser.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">9. AIRSPACE & AREA MANAGEMENT</div>
+      <p>Tap <b style="color:var(--text-bright)">✚ CREATE AREA</b> to draw a polygon or circular area (useful for marking CTRs, restricted airspace, danger areas, or operating zones). Enter corner coordinates or choose a centre waypoint and radius. Use the <b style="color:var(--text-bright)">Show / Hide</b> toggles to manage clutter on the map.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">10. DIRECT-TO NAVIGATION</div>
-      <p>Select a waypoint from the <b style="color:var(--text-bright)">Direct-To Waypoint</b> dropdown → tap ➤ DIRECT-TO. A magenta dashed line draws from your position to the target waypoint, updating live with distance, bearing, and ETA. Tap ⏹ STOP to end.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">10. MEASUREMENT TOOL</div>
+      <p>Tap <b style="color:var(--text-bright)">📏 MEASURE</b> on the map. Two draggable markers appear. Drag them to measure distance and reciprocal bearings between any two points — useful for checking distances to airspace boundaries or alternates. Tap ⏹ STOP when done.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">11. MOVING TRACK PROJECTION</div>
-      <p>In Flying Mode, tap <b style="color:var(--text-bright)">📡 TRACK ON</b>. A green dashed line projects your 20-minute track based on current GPS speed and course. The panel shows projected distance, course, and speed. Tap 📡 TRACK OFF to hide.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">11. OFFLINE MAP CACHING (PRE-FLIGHT)</div>
+      <p>Before flying into a low-connectivity area, expand <b style="color:var(--text-bright)">Pre-flight Cache</b> → tap 📦 CACHE AREA → draw a rectangle over your planned area on the map → select zoom levels (Z12–Z15 recommended for VFR) and map layers → tap ⬇ DOWNLOAD NOW. Cached tiles remain available when offline.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">12. AREA MANAGEMENT</div>
-      <p>Tap <b style="color:var(--text-bright)">✚ CREATE AREA</b> to draw a polygon or circular restricted/operational area. Enter corner coordinates or choose a centre waypoint and diameter. Areas are colour-coded and labelled on the map. Use the <b style="color:var(--text-bright)">Show / Hide Areas</b> panel to toggle individual area visibility.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">12. FUEL CALCULATOR</div>
+      <p>Expand the <b style="color:var(--text-bright)">⛽ Fuel Calculator</b> section. Enter your aircraft's fuel flow (kg/hr), maximum fuel capacity, current fuel on board, and planned uplift. The calculator shows total after uplift, 5% safety reserve, usable fuel, and estimated endurance.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">13. MEASUREMENT TOOL</div>
-      <p>Tap <b style="color:var(--text-bright)">📏 MEASURE</b> on the map. Two draggable endpoints appear. Drag them to measure the distance and reciprocal bearings between any two points on the map. Tap ⏹ STOP to close.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">13. FLIGHT BRIEF & ROUTE SHEET</div>
+      <p>Tap <b style="color:var(--text-bright)">🖨️ PRINT BRIEF</b>. Fill in flight details (callsign/flight no., PIC/SIC, aircraft type, ETD, altitude, frequencies), weather, NOTAMs, and special instructions on Step 1. Step 2 calculates route distances, bearings, and fuel. Step 3 generates a printable briefing sheet — tap 🖨️ PRINT FLIGHT BRIEF and use your device's print/save-as-PDF dialog.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">14. PRE-FLIGHT TILE CACHE (OFFLINE USE)</div>
-      <p>Expand the <b style="color:var(--text-bright)">Pre-flight Cache</b> section. Tap 📦 CACHE AREA → draw a rectangle on the map over your operating area → select zoom levels and map layers → tap ⬇ DOWNLOAD NOW. All tiles in that area are saved for offline use. Useful before flights in low-connectivity areas.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">14. IMPORT / EXPORT & SHARING</div>
+      <p><b>💾 SAVE:</b> Saves all data to this device's local storage.<br>
+      <b>📤 EXPORT:</b> Export waypoints, areas, routes, or a custom mix as a JSON file. Include approach plate PDFs if needed (increases file size). Use <b style="color:var(--accent-amber)">🛣️ Share Routes</b> to export a route with all its waypoints.<br>
+      <b>📥 IMPORT:</b> Paste a previously exported JSON and tap IMPORT to restore.<br>
+      <b>💬 Pilot Chat:</b> Use the chat feature to share waypoints, areas, and routes directly to other SIMPLIFLY users in real time.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">15. IMPORT / EXPORT</div>
-      <p><b>💾 SAVE:</b> Saves all waypoints and areas to this browser's local storage.<br>
-      <b>📤 EXPORT:</b> Opens the export menu. Choose what to export — All, Waypoints Only, Areas Only, Selected items, Custom mix, or <b style="color:var(--accent-amber)">🛣️ Share Routes</b> (exports selected routes with their waypoints). Tick "Include Approach Plates PDFs" to include PDF data (increases file size).<br>
-      <b>📥 IMPORT:</b> Paste exported JSON into the text area and tap IMPORT. Waypoints, areas, and routes are all restored, including PDFs if they were included in the export.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">15. DOCUMENTS LIBRARY</div>
+      <p>Store PDFs such as AFM extracts, SOPs, Jeppesen charts, or company documents under <b style="color:var(--text-bright)">📄 Documents</b>. Tap ➕ ADD DOCUMENT, select your PDF, give it a name, and save. Documents are stored on-device and accessible offline. Tap the document name to open the full-screen viewer.</p>
 
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">16. PRINT FLIGHT BRIEF</div>
-      <p>Tap <b style="color:var(--text-bright)">🖨️ PRINT BRIEF</b>. Fill in mission details, weather, NOTAM, and special notes. The current route is automatically included in the briefing. Tap 🖨️ PRINT / SAVE PDF to open the print dialog.</p>
-
-      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">17. TIPS FOR iPAD USE</div>
-      <p>• The sidebar docks on the <b style="color:var(--text-bright)">right side</b> in both portrait and landscape — tap the glowing blue tab to collapse/expand it for full-screen map.<br>
-      • PDF approach plates show all pages when opened in the viewer.<br>
-      • Pre-cache tiles before flight for offline map use.<br>
-      • Add this app to your iPad Home Screen for a full-screen PWA experience.<br>
-      • Use Safari on iPad for best GPS and PDF compatibility.<br>
-      • When printing Pilot Card or Pre-Flight Briefing, use the in-app <b style="color:var(--text-bright)">◀ BACK</b> button to return — do not close the app.</p>
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:2px;color:var(--accent-amber);margin:14px 0 6px;border-bottom:1px solid var(--border-dim);padding-bottom:4px">16. TIPS FOR iPAD & MOBILE USE</div>
+      <p>• Add SIMPLIFLY to your Home Screen (Share → Add to Home Screen in Safari) for full-screen PWA mode — no browser bars.<br>
+      • Use Safari on iOS/iPadOS for best GPS accuracy and PDF compatibility.<br>
+      • Collapse the sidebar with the edge tab for a full-screen map view when airborne.<br>
+      • Pre-cache map tiles on the ground before departure — cached tiles work fully offline.<br>
+      • After printing a brief, use the in-app <b style="color:var(--text-bright)">◀ BACK</b> button — do not close the tab.</p>
 
     </div>
   </div>
@@ -1275,43 +1257,39 @@ textarea{resize:vertical;min-height:55px}
     <div class="splash-sub">CIVIL AIR NAVIGATION SYSTEM</div>
 
     <div class="splash-section">
-      <div class="splash-section-title">ℹ️ About</div>
-      <p>Developed for <strong style="color:var(--text-bright)">Civil Aviation Use</strong></p>
-      <p style="color:var(--text-dim);font-size:11px">All rights reserved. Features may be updated without prior notice.</p>
+      <div class="splash-section-title">⚠️ IMPORTANT DISCLAIMER</div>
+      <p style="color:var(--accent-red);font-weight:600">FOR FLIGHT PLANNING SUPPORT ONLY — NOT FOR PRIMARY NAVIGATION</p>
+      <p>• This application is a <strong style="color:var(--text-bright)">planning and situational awareness tool</strong> only.</p>
+      <p>• It is <strong style="color:var(--accent-red)">NOT certified</strong> as an aeronautical navigation system and does <strong style="color:var(--accent-red)">NOT</strong> replace official charts, certified avionics, or approved flight procedures.</p>
+      <p>• All navigation decisions remain the sole responsibility of the Pilot-in-Command.</p>
+      <p>• Always cross-check with official AIP, NOTAMs, and certified instruments.</p>
     </div>
 
     <div class="splash-section">
-      <div class="splash-section-title">📱 System Type — Progressive Web Application (PWA)</div>
-      <p>✔ Launches instantly via browser or home screen</p>
-      <p>✔ Optimized for low-bandwidth and offline use</p>
-      <p>✔ Secure, lightweight and continuously updatable</p>
-      <p>✔ Delivers operational experience without installation</p>
+      <div class="splash-section-title">📋 Terms of Use</div>
+      <p class="splash-tc">By proceeding, you acknowledge and agree that: (1) This application is provided as-is for flight planning support only, with no warranty of accuracy, completeness, or availability. (2) This tool does not constitute a certified navigation system and must not be used as the primary means of navigation. (3) The operator reserves the right to modify, suspend, or discontinue this service at any time without notice. (4) The Pilot-in-Command bears full responsibility for all navigation and flight decisions. (5) Use of this application is restricted to authorised users only.</p>
     </div>
 
-    <div class="splash-section">
-      <div class="splash-section-title">⚠️ Operational Notice</div>
-      <p>• Intended for navigation support and situational awareness only</p>
-      <p>• <strong style="color:var(--accent-red)">Not a substitute</strong> for certified flight instruments or official data</p>
-      <p>• Users must comply with established aviation procedures at all times</p>
-      <p>• The owner may at any time remove this app from the server — upon which the app will cease to function</p>
+    <div class="splash-section" style="background:rgba(39,174,96,0.07);border:1px solid rgba(39,174,96,0.2);border-radius:6px;padding:10px 12px">
+      <div class="splash-section-title" style="color:var(--accent-green)">✅ Application Features</div>
+      <p>✔ Waypoint & route planning with distance, bearing and ETA</p>
+      <p>✔ Real-time GPS tracking and Direct-To navigation</p>
+      <p>✔ Approach plate (PDF) storage per waypoint</p>
+      <p>✔ Offline map tiles — pre-cache your operating area</p>
+      <p>✔ Flight brief and route sheet generation</p>
+      <p>✔ Pilot-to-pilot data sharing</p>
     </div>
 
-    <div class="splash-section">
-      <div class="splash-section-title">📋 Terms &amp; Conditions</div>
-      <p class="splash-tc">By proceeding you agree that: (1) This application is provided as-is for operational support only and carries no warranty of accuracy or availability. (2) The developer holds all intellectual property rights and may modify, suspend or permanently delete this application from the server at any time without notice, upon which the application will cease to function. (3) This tool does not replace certified navigation equipment, official maps or approved flight procedures. (4) The user assumes full responsibility for any navigation decisions made using this application.</p>
-      <p style="margin-top:8px">📧 For support, contact your system administrator.</p>
+    <div style="text-align:center;margin-top:10px;font-family:var(--font-display);font-size:10px;color:var(--accent-green);letter-spacing:2px">
+      SIMPLIFLY &nbsp;·&nbsp; ✈️ FLY SAFE
     </div>
 
-    <div style="text-align:center;margin-top:8px;font-family:var(--font-display);font-size:10px;color:var(--accent-green);letter-spacing:2px">
-      STATUS: READY &nbsp;·&nbsp; ✈️ SAFE LANDINGS
-    </div>
-
-    <label id="splashNeverShow">
-      <input type="checkbox" id="splashNeverShowChk"> Never show again
+    <label id="splashNeverShow" style="margin-top:10px">
+      <input type="checkbox" id="splashNeverShowChk"> Don't show this again
     </label>
 
     <div class="splash-btn-row">
-      <button class="btn btn-green" id="splashAgreeBtn">✅ AGREE &amp; PROCEED</button>
+      <button class="btn btn-green" id="splashAgreeBtn">✅ I UNDERSTAND — PROCEED</button>
     </div>
   </div>
 </div>
@@ -1634,42 +1612,7 @@ textarea{resize:vertical;min-height:55px}
     </div>
   </div>
 
-  <!-- ===== HOLDING ENTRY CALCULATOR ===== -->
-  <div class="section">
-    <div class="section-label" id="holdCalcToggle" style="cursor:pointer;user-select:none">
-      ✈️ Holding Entry Calc
-      <span id="holdCalcArrow" style="margin-left:auto;color:var(--accent-amber);font-size:11px">▶ EXPAND</span>
-    </div>
-    <div id="holdCalcPanel" style="display:none;margin-top:6px">
 
-      <!-- Turn direction selector -->
-      <div style="display:flex;gap:6px;margin-bottom:8px">
-        <div id="holdTurnR" onclick="holdSetTurn('R')"
-          style="flex:1;text-align:center;border:1px solid var(--accent-cyan);border-radius:5px;padding:7px 4px;cursor:pointer;background:rgba(0,170,255,0.18);font-family:var(--font-display);font-size:10px;font-weight:700;color:var(--accent-cyan)">
-          ↻ RIGHT TURN
-        </div>
-        <div id="holdTurnL" onclick="holdSetTurn('L')"
-          style="flex:1;text-align:center;border:1px solid var(--border-dim);border-radius:5px;padding:7px 4px;cursor:pointer;background:transparent;font-family:var(--font-display);font-size:10px;font-weight:700;color:var(--text-dim)">
-          ↺ LEFT TURN
-        </div>
-      </div>
-
-      <!-- Inputs -->
-<label style="font-size:10px;letter-spacing:1px;color:var(--text-secondary)">INBOUND COURSE (°)</label>
-      <input type="number" id="hold_inbound" min="0" max="360" placeholder="e.g. 090"
-        style="margin-bottom:6px" oninput="holdCalc()"/>
-
-      <label style="font-size:10px;letter-spacing:1px;color:var(--text-secondary)">RADIAL FROM STATION (°)</label>
-      <input type="number" id="hold_heading" min="0" max="360" placeholder="e.g. 215"
-        style="margin-bottom:6px" oninput="holdCalc()"/>
-
-      <!-- Result box -->
-      <div id="hold_result" class="hold-result-box">
-        <span style="color:var(--text-dim)">Enter values above</span>
-      </div>
-
-    </div>
-  </div>
 
 <div id="adminBtnContainer" style="display:none;padding:8px 14px 0">
   <button id="openAdminPanelBtn" class="btn full" style="background:rgba(255,171,0,0.14);border-color:rgba(255,171,0,0.6);color:var(--accent-amber);font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:1.5px">⚙️ ADMIN PANEL</button>
@@ -6004,215 +5947,8 @@ document.getElementById('docViewerCloseBtn').onclick = function(){
 (function(){
 
   // ── State ──────────────────────────────────────────
-  let holdTurnDir = 'R'; // 'R' = right turns (standard), 'L' = left turns
 
-  // ── Toggle panel open/close ──────────────────────
-  document.getElementById('holdCalcToggle').onclick = function(){
-    const panel = document.getElementById('holdCalcPanel');
-    const arrow = document.getElementById('holdCalcArrow');
-    const open  = panel.style.display !== 'none';
-    panel.style.display = open ? 'none' : '';
-    arrow.textContent   = open ? '▶ EXPAND' : '▼ COLLAPSE';
-    if(!open) holdCalc(); // recalc when opening
-  };
-
-  // ── Turn direction selector ───────────────────────
-  window.holdSetTurn = function(dir){
-    holdTurnDir = dir;
-    const btnR = document.getElementById('holdTurnR');
-    const btnL = document.getElementById('holdTurnL');
-    const activeStyle  = 'border:1px solid var(--accent-cyan);background:rgba(0,170,255,0.18);color:var(--accent-cyan)';
-    const inactiveStyle= 'border:1px solid var(--border-dim);background:transparent;color:var(--text-dim)';
-    btnR.style.cssText += dir==='R' ? ';'+activeStyle : ';'+inactiveStyle;
-    btnL.style.cssText += dir==='L' ? ';'+activeStyle : ';'+inactiveStyle;
-    // Re-style properly (reset both then apply)
-    btnR.setAttribute('style',
-      'flex:1;text-align:center;border-radius:5px;padding:7px 4px;cursor:pointer;font-family:var(--font-display);font-size:10px;font-weight:700;' +
-      (dir==='R'
-        ? 'border:1px solid var(--accent-cyan);background:rgba(0,170,255,0.18);color:var(--accent-cyan)'
-        : 'border:1px solid var(--border-dim);background:transparent;color:var(--text-dim)')
-    );
-    btnL.setAttribute('style',
-      'flex:1;text-align:center;border-radius:5px;padding:7px 4px;cursor:pointer;font-family:var(--font-display);font-size:10px;font-weight:700;' +
-      (dir==='L'
-        ? 'border:1px solid var(--accent-cyan);background:rgba(0,170,255,0.18);color:var(--accent-cyan)'
-        : 'border:1px solid var(--border-dim);background:transparent;color:var(--text-dim)')
-    );
-    holdCalc();
-  };
-
-  // ── Normalize angle to 0–360 ──────────────────────
-  function norm(a){ return ((a % 360) + 360) % 360; }
-
-  // ── Core logic: determine entry type ─────────────
-  // Returns { type, color, cls, instructions }
-  //
-  // Method: radial-based sector, built from inbound course (IC).
-  //
-  //   RIGHT-hand pattern:
-  //     T = IC − 70°  (teardrop boundary, 70° CCW from IC)
-  //     P = T + 180°  (parallel boundary, opposite of T)
-  //     Radial in arc T→IC  (CW, 70°)  = TEARDROP
-  //     Radial in arc IC→P  (CW, 110°) = PARALLEL
-  //     Everything else                 = DIRECT
-  //     Exactly on T = Either Direct or Teardrop
-  //     Exactly on P = Either Parallel or Direct
-  //
-  //   LEFT-hand pattern (mirror):
-  //     T = IC + 70°  (teardrop boundary, 70° CW from IC)
-  //     P = T + 180°  (parallel boundary, opposite of T)
-  //     Radial in arc IC→T  (CW, 70°)  = TEARDROP
-  //     Radial in arc P→IC  (CW, 110°) = PARALLEL
-  //     Everything else                 = DIRECT
-  //     Exactly on T = Either Direct or Teardrop
-  //     Exactly on P = Either Parallel or Direct
-  //
-  // Helper: is angle X in the clockwise arc from A to B?
-  // (all values 0–360)
-  function inCWArc(x, start, end) {
-    // arc sweeps clockwise from start to end
-    const s = ((start % 360) + 360) % 360;
-    const e = ((end   % 360) + 360) % 360;
-    const v = ((x     % 360) + 360) % 360;
-    if (s < e) return v > s && v < e;
-    if (s > e) return v > s || v < e; // arc wraps 360
-    return false; // s === e → zero-width arc
-  }
-
-function determineEntry(ic, radial, turnDir) {
-    const norm = (x) => ((x % 360) + 360) % 360;
-
-    ic     = norm(ic);
-    radial = norm(radial);
-
-    const outHdg      = Math.round(norm(ic + 180));
-    // Teardrop hdg = 30° off outbound on the NON-holding side:
-    // Right-hand: non-holding side is LEFT of outbound → outbound − 30 = ic + 150°
-    // Left-hand:  non-holding side is RIGHT of outbound → outbound + 30 = ic + 210°
-    const teardropHdg = turnDir === 'R'
-        ? Math.round(norm(ic + 150))
-        : Math.round(norm(ic + 210));
-    const turnWord     = turnDir === 'R' ? 'right' : 'left';
-    const turnOpposite = turnDir === 'R' ? 'left'  : 'right';
-
-    // ── Compute T and P ──
-    const T = norm(turnDir === 'R' ? ic - 70 : ic + 70);
-    const P = norm(T + 180);
-
-    // ── Boundary check (exact hit on T or P) ──
-    if (radial === T) {
-        return {
-            type: 'EITHER ENTRY',
-            color: '#7c4dff',
-            cls:   'hold-entry-either',
-            T, P,
-            instructions:
-                `Radial is on the Direct/Teardrop boundary (T=${T}°).\n` +
-                `✓ Either Direct or Teardrop entry acceptable.`
-        };
-    }
-    if (radial === P) {
-        return {
-            type: 'EITHER ENTRY',
-            color: '#7c4dff',
-            cls:   'hold-entry-either',
-            T, P,
-            instructions:
-                `Radial is on the Parallel/Direct boundary (P=${P}°).\n` +
-                `✓ Either Parallel or Direct entry acceptable.`
-        };
-    }
-
-    // ── Sector tests ──
-    // RIGHT-hand: Teardrop = CW arc T→IC (70°), Parallel = CW arc IC→P (110°)
-    // LEFT-hand:  Teardrop = CW arc IC→T (70°), Parallel = CW arc P→IC (110°)
-    const inTeardrop = turnDir === 'R'
-        ? inCWArc(radial, T,  ic)
-        : inCWArc(radial, ic, T);
-
-    const inParallel = turnDir === 'R'
-        ? inCWArc(radial, ic, P)
-        : inCWArc(radial, P,  ic);
-
-    // ─────────────────────────────
-    // TEARDROP
-    // ─────────────────────────────
-    if (inTeardrop) {
-        return {
-            type: 'TEARDROP ENTRY',
-            color: '#ffab00',
-            cls:   'hold-entry-teardrop',
-            T, P,
-            instructions:
-                `1. Cross fix, turn ${turnOpposite} to hdg ${teardropHdg}° (outbound ${outHdg}° offset 30° to ${turnOpposite}).\n` +
-                `2. Fly for 1 min.\n` +
-                `3. Turn ${turnWord} to intercept inbound course ${ic}°.\n` +
-                `4. Cross fix; continue standard hold.`
-        };
-    }
-
-    // ─────────────────────────────
-    // PARALLEL
-    // ─────────────────────────────
-    if (inParallel) {
-        return {
-            type: 'PARALLEL ENTRY',
-            color: '#00aaff',
-            cls:   'hold-entry-parallel',
-            T, P,
-            instructions:
-                `1. Cross fix, turn ${turnOpposite} to outbound hdg ${outHdg}°.\n` +
-                `2. Fly outbound for 1 min.\n` +
-                `3. Turn ${turnOpposite} 180° to intercept inbound course ${ic}°.\n` +
-                `4. Cross fix; continue standard hold.`
-        };
-    }
-
-    // ─────────────────────────────
-    // DIRECT
-    // ─────────────────────────────
-    return {
-        type: 'DIRECT ENTRY',
-        color: '#00e676',
-        cls:   'hold-entry-direct',
-        T, P,
-        instructions:
-            `1. Cross fix, turn ${turnWord} to outbound hdg ${outHdg}°.\n` +
-            `2. Fly outbound for 1 min.\n` +
-            `3. Turn ${turnWord} to intercept inbound course ${ic}°.\n` +
-            `4. Cross fix; continue standard hold.`
-    };
-}
-
-  // ── Main calc entry point ─────────────────────────
-  window.holdCalc = function(){
-    const inVal  = parseFloat(document.getElementById('hold_inbound').value);
-    const hdgVal = parseFloat(document.getElementById('hold_heading').value);
-    const resBox = document.getElementById('hold_result');
-
-    // If inputs incomplete, show placeholder diagram
-    if(isNaN(inVal) || isNaN(hdgVal)){
-      resBox.className = 'hold-result-box';
-      resBox.innerHTML = '<span style="color:var(--text-dim)">Enter values above</span>';
-      return;
-    }
-
-    const ic     = norm(inVal);
-    const radial = norm(hdgVal);
-    const result = determineEntry(ic, radial, holdTurnDir);
-
-    // Build result HTML
-    resBox.className = 'hold-result-box ' + result.cls;
-    resBox.innerHTML =
-      `<div class="hold-entry-type" style="color:${result.color}">${result.type}</div>` +
-      `<div style="color:var(--text-secondary);font-size:9px;margin-bottom:4px">` +
-        `IC: ${Math.round(ic)}° | Radial: ${Math.round(radial)}° | ` +
-        `T: ${Math.round(result.T)}° | P: ${Math.round(result.P)}° | Turn: ${holdTurnDir==='R'?'↻ RIGHT':'↺ LEFT'}` +
-      `</div>` +
-      result.instructions.split('\n').map(l=>`<div>${l}</div>`).join('');
-  };
-
-})(); // end Holding Entry Calculator
+  /* Holding Entry Calculator removed */
 
 
 (function(){
@@ -7383,7 +7119,7 @@ window.closeCrewPopup = function(){
 
 <!-- Dark Leaflet overrides -->
 <style>
-.leaflet-popup-content-wrapper{background:var(--bg-panel) !important;border:1px solid var(--border-glow) !important;color:var(--text-primary) !important;border-radius:8px !important;box-shadow:0 4px 20px rgba(0,0,0,0.6) !important}
+.leaflet-popup-content-wrapper{background:var(--bg-panel) !important;border:1px solid var(--border-glow) !important;color:var(--text-primary) !important;border-radius:8px !important;box-shadow:0 4px 24px rgba(0,0,0,0.7) !important}
 .leaflet-popup-tip{background:var(--bg-panel) !important}
 .leaflet-popup-content{font-family:var(--font-ui);font-size:13px;margin:10px 14px}
 .leaflet-tooltip{background:rgba(4,8,15,0.92) !important;border:1px solid var(--border-glow) !important;color:var(--text-primary) !important;font-family:var(--font-mono) !important;font-size:11px !important}

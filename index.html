@@ -6368,11 +6368,33 @@ window.closeCrewPopup = function(){
       arr.forEach(function(u){
         var card=document.createElement('div'); card.className='admin-user-card';
         var isSelf=currentUserData&&u.uid===currentUserData.uid;
-        var joinDate=u.joinedAt?new Date(u.joinedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+        // ── Date & duration calculation ──
+        var joinDate = '—', durationStr = '';
+        if(u.joinedAt){
+          var jd = new Date(u.joinedAt);
+          joinDate = jd.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+          var now = new Date();
+          var totalDays = Math.floor((now - jd) / 86400000);
+          var yrs  = Math.floor(totalDays / 365);
+          var rem  = totalDays - yrs * 365;
+          var mths = Math.floor(rem / 30);
+          var days = rem - mths * 30;
+          var parts = [];
+          if(yrs  > 0) parts.push(yrs  + (yrs  === 1 ? ' yr'  : ' yrs'));
+          if(mths > 0) parts.push(mths + (mths === 1 ? ' mo'  : ' mos'));
+          if(days > 0 || parts.length === 0) parts.push(days + (days === 1 ? ' day' : ' days'));
+          durationStr = parts.join(' ') + ' ago';
+        }
         card.innerHTML='<div class="au-name">'+(u.displayName||'(no name)')+(isSelf?' <span style="color:var(--text-dim);font-size:10px">(you)</span>':'')+'</div>'+
           '<div class="au-email">'+(u.email||'—')+'</div>'+
-          '<div class="au-meta"><span class="au-status-badge au-status-'+(u.status||'pending')+'">'+(u.status||'pending').toUpperCase()+'</span>'+
-          '<span class="au-role-badge">'+(u.role||'user').toUpperCase()+'</span> &nbsp; Joined: '+joinDate+'</div>'+
+          '<div class="au-meta">'+
+            '<span class="au-status-badge au-status-'+(u.status||'pending')+'">'+(u.status||'pending').toUpperCase()+'</span>'+
+            '<span class="au-role-badge">'+(u.role||'user').toUpperCase()+'</span>'+
+          '</div>'+
+          '<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.7">'+
+            '📅 Joined: <span style="color:var(--text-secondary)">'+(joinDate)+'</span>'+
+            (durationStr ? ' &nbsp;<span style="color:var(--accent-amber);font-size:10px">('+durationStr+')</span>' : '')+
+          '</div>'+
           '<div class="btn-row" id="actions-'+u.uid+'"></div>';
         list.appendChild(card); renderAdminActions(u,isSelf);
       });

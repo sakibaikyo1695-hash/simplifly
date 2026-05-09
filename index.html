@@ -2287,17 +2287,29 @@ function createMarkerIcon(type='default'){
 
 function createHelicopterIcon(heading){
   const rotation=heading||0;
-  const svgIcon=`<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${rotation}deg)">
-    <g transform="translate(16,16)">
-      <ellipse cx="0" cy="0" rx="12" ry="6" fill="#a52a2a" opacity="0.3"/>
-      <rect x="-1.5" y="-8" width="3" height="16" fill="#2c1810" rx="1"/>
-      <rect x="-10" y="-2" width="20" height="2" fill="#2c1810" rx="1"/>
-      <circle cx="0" cy="0" r="3" fill="#8b0000"/>
-      <line x1="-15" y1="-10" x2="15" y2="-10" stroke="#4a4a4a" stroke-width="1.5"/>
-      <path d="M 0,-8 L 3,-12 L 0,-11 L -3,-12 Z" fill="#2c1810"/>
+  // Professional top-down fixed-wing aircraft — EFB / glass cockpit style
+  // Points UP (north) at 0° heading; CSS rotation tracks actual heading
+  const svgIcon=`<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"
+    style="transform:rotate(${rotation}deg);filter:drop-shadow(0 0 3px rgba(0,180,255,0.9)) drop-shadow(0 0 6px rgba(0,120,220,0.5))">
+    <g transform="translate(20,20)">
+      <!-- Fuselage -->
+      <path d="M0,-14 C1.2,-12 1.8,-6 1.8,0 C1.8,6 1.4,10 0,13 C-1.4,10 -1.8,6 -1.8,0 C-1.8,-6 -1.2,-12 0,-14 Z"
+        fill="white" stroke="#1a6fcc" stroke-width="1"/>
+      <!-- Main wings — swept, mid-fuselage -->
+      <path d="M0,-2 L-16,-1 L-14,2 L-1,1 Z"
+        fill="white" stroke="#1a6fcc" stroke-width="0.8"/>
+      <path d="M0,-2 L16,-1 L14,2 L1,1 Z"
+        fill="white" stroke="#1a6fcc" stroke-width="0.8"/>
+      <!-- Horizontal stabilisers — tail -->
+      <path d="M0,9 L-7,10.5 L-6.5,12.5 L0,11 Z"
+        fill="white" stroke="#1a6fcc" stroke-width="0.8"/>
+      <path d="M0,9 L7,10.5 L6.5,12.5 L0,11 Z"
+        fill="white" stroke="#1a6fcc" stroke-width="0.8"/>
+      <!-- Centre dot — aircraft position point -->
+      <circle cx="0" cy="0" r="1.8" fill="#1a6fcc"/>
     </g>
   </svg>`;
-  return L.divIcon({html:svgIcon,className:'custom-marker',iconSize:[32,32],iconAnchor:[16,16]});
+  return L.divIcon({html:svgIcon,className:'custom-marker',iconSize:[40,40],iconAnchor:[20,20]});
 }
 
 /* ====================================================

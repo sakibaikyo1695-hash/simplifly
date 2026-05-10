@@ -1630,15 +1630,26 @@ textarea{resize:vertical;min-height:55px}
     </div>
     <div id="notamMenuPanel" style="display:none;margin-top:8px">
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.6">
-        Enter an ICAO code (e.g. VGEG, VGZR) to fetch active NOTAMs.
+        Enter ICAO code — opens official NOTAM sources.
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:8px">
-        <input type="text" id="notamIcaoInput" placeholder="ICAO (e.g. VGEG)" maxlength="4"
-          style="flex:1;text-transform:uppercase;font-size:13px;letter-spacing:2px"/>
-        <button id="notamSearchBtn" class="btn btn-red" style="flex-shrink:0;padding:8px 12px;font-size:12px">🔍</button>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="notamIcaoInput" placeholder="e.g. VGEG" maxlength="4"
+          style="flex:1;text-transform:uppercase;font-size:14px;letter-spacing:3px;font-weight:700"/>
       </div>
-      <div id="notamStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:6px;min-height:14px"></div>
-      <div id="notamResults" style="max-height:420px;overflow-y:auto"></div>
+      <div style="display:flex;flex-direction:column;gap:6px" id="notamLinkBtns">
+        <a id="notamFaaBtn" class="btn btn-red full" style="font-family:var(--font-display);font-size:11px;letter-spacing:1px;text-decoration:none" target="_blank" href="#">
+          🌐 FAA NOTAM SEARCH
+        </a>
+        <a id="notamIcaoBtn" class="btn btn-amber full" style="font-family:var(--font-display);font-size:11px;letter-spacing:1px;text-decoration:none" target="_blank" href="#">
+          🌐 ICAO NOTAM VIEWER
+        </a>
+        <a id="notamEuroBtn" class="btn btn-blue full" style="font-family:var(--font-display);font-size:11px;letter-spacing:1px;text-decoration:none" target="_blank" href="#">
+          🌐 AUTOROUTER NOTAM
+        </a>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-top:8px;line-height:1.6;text-align:center">
+        Opens in browser. Enter ICAO then tap a source.
+      </div>
     </div>
   </div>
 
@@ -6352,106 +6363,46 @@ window.attachPostLoginHandlers = function(){
 };
 
 /* ====================================================
-   NOTAM FEATURE
+   NOTAM FEATURE — link-out to official sources
 ==================================================== */
 (function(){
-  function pad(n){return String(n).padStart(2,'0');}
+  function updateNotamLinks(icao){
+    icao=(icao||'').trim().toUpperCase();
+    var faaBtn  = document.getElementById('notamFaaBtn');
+    var icaoBtn = document.getElementById('notamIcaoBtn');
+    var euroBtn = document.getElementById('notamEuroBtn');
+    if(!faaBtn)return;
 
-  function renderNotamCards(notams, icao){
-    var box=document.getElementById('notamResults');
-    var status=document.getElementById('notamStatus');
-    box.innerHTML='';
-    if(!notams||notams.length===0){
-      status.textContent='No active NOTAMs found for '+icao+'.';
-      status.style.color='var(--accent-green)';
-      return;
-    }
-    status.textContent=notams.length+' NOTAM'+(notams.length>1?'s':'')+' for '+icao;
-    status.style.color='var(--accent-amber)';
-    notams.forEach(function(n){
-      var card=document.createElement('div');
-      card.className='notam-card';
-      var idEl=document.createElement('div');
-      idEl.className='notam-id';
-      idEl.textContent=(n.id||'NOTAM')+' ● ACTIVE';
-      card.appendChild(idEl);
-      if(n.validity){
-        var valEl=document.createElement('div');
-        valEl.className='notam-validity';
-        valEl.textContent=n.validity;
-        card.appendChild(valEl);
-      }
-      var txtEl=document.createElement('div');
-      txtEl.className='notam-text';
-      txtEl.textContent=n.text||'';
-      card.appendChild(txtEl);
-      box.appendChild(card);
-    });
-  }
+    if(icao.length>=3){
+      // FAA NOTAM Search — pre-filled location search
+      faaBtn.href='https://notams.aim.faa.gov/notamSearch/nsapp.html#/'+icao;
+      faaBtn.style.opacity='1';faaBtn.style.pointerEvents='auto';
 
-  async function fetchNotams(icao){
-    var status=document.getElementById('notamStatus');
-    var box=document.getElementById('notamResults');
-    icao=icao.trim().toUpperCase();
-    if(icao.length<3||icao.length>4){
-      status.textContent='Please enter a valid 3-4 letter ICAO code.';
-      status.style.color='var(--accent-red)';
-      return;
-    }
-    status.textContent='Fetching NOTAMs for '+icao+'...';
-    status.style.color='var(--text-dim)';
-    box.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:10px 0;text-align:center">Asking AI to fetch NOTAMs...</div>';
+      // ICAO iSTARS NOTAM viewer
+      icaoBtn.href='https://www.icao.int/safety/istars/pages/notams.aspx?location='+icao;
+      icaoBtn.style.opacity='1';icaoBtn.style.pointerEvents='auto';
 
-    try{
-      // Use Claude AI with web_search tool to fetch real NOTAMs from the FAA NOTAM search
-      var resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:2000,
-          tools:[{type:'web_search_20250305',name:'web_search'}],
-          system:'You are an aviation NOTAM retrieval assistant. When given an ICAO code, search for and return the current active NOTAMs for that airport. Search the FAA NOTAM search site or other authoritative sources. Return ONLY a JSON array with no markdown, no explanation. Each element: {"id":"NOTAM_ID","validity":"FROM: YYYY-MM-DD HHmmZ  TO: YYYY-MM-DD HHmmZ","text":"NOTAM body text"}. If no NOTAMs found return [].',
-          messages:[{role:'user',content:'Get all current active NOTAMs for ICAO airport code '+icao+'. Search notams.aim.faa.gov or similar source. Return JSON array only.'}]
-        })
-      });
-
-      if(!resp.ok)throw new Error('API error: '+resp.status);
-      var data=await resp.json();
-
-      // Extract the final text response
-      var textContent='';
-      if(data.content&&Array.isArray(data.content)){
-        data.content.forEach(function(block){
-          if(block.type==='text') textContent+=block.text;
-        });
-      }
-
-      // Parse JSON from response
-      var jsonMatch=textContent.match(/\[[\s\S]*\]/);
-      if(!jsonMatch)throw new Error('No JSON in response');
-      var notams=JSON.parse(jsonMatch[0]);
-      renderNotamCards(notams, icao);
-
-    }catch(e){
-      status.textContent='Failed to fetch NOTAMs for '+icao+'.';
-      status.style.color='var(--accent-red)';
-      box.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);line-height:1.7;padding:8px 0">'
-        +'Error: '+(e.message||String(e))+'<br><br>'
-        +'<span style="color:var(--text-dim)">Check your internet connection and try again.</span></div>';
+      // Autorouter NOTAM page
+      euroBtn.href='https://www.autorouter.aero/notam#'+icao;
+      euroBtn.style.opacity='1';euroBtn.style.pointerEvents='auto';
+    } else {
+      faaBtn.href='#'; icaoBtn.href='#'; euroBtn.href='#';
+      faaBtn.style.opacity='0.35';icaoBtn.style.opacity='0.35';euroBtn.style.opacity='0.35';
+      faaBtn.style.pointerEvents='none';icaoBtn.style.pointerEvents='none';euroBtn.style.pointerEvents='none';
     }
   }
 
   document.addEventListener('DOMContentLoaded',function(){
-    var btn=document.getElementById('notamSearchBtn');
     var inp=document.getElementById('notamIcaoInput');
-    if(!btn||!inp)return;
-    btn.onclick=function(){ fetchNotams(inp.value); };
-    inp.addEventListener('keypress',function(e){
-      if(e.key==='Enter') fetchNotams(inp.value);
-    });
+    if(!inp)return;
+    // Start dimmed
+    updateNotamLinks('');
     inp.addEventListener('input',function(){
       this.value=this.value.toUpperCase();
+      updateNotamLinks(this.value);
+    });
+    inp.addEventListener('keypress',function(e){
+      if(e.key==='Enter') updateNotamLinks(this.value);
     });
   });
 })();

@@ -6357,54 +6357,34 @@ window.attachPostLoginHandlers = function(){
 (function(){
   function pad(n){return String(n).padStart(2,'0');}
 
-  function fmtTimestamp(ts){
-    // ts is Unix epoch seconds (autorouter format)
-    if(!ts)return '?';
-    var d=new Date(ts*1000);
-    return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())
-      +' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+'Z';
-  }
-
-  function renderNotams(rows, icao){
+  function renderNotamCards(notams, icao){
     var box=document.getElementById('notamResults');
     var status=document.getElementById('notamStatus');
     box.innerHTML='';
-    if(!rows||rows.length===0){
-      status.textContent='No NOTAMs found for '+icao+'.';
+    if(!notams||notams.length===0){
+      status.textContent='No active NOTAMs found for '+icao+'.';
       status.style.color='var(--accent-green)';
       return;
     }
-    var now=Math.floor(Date.now()/1000);
-    status.textContent=rows.length+' NOTAM'+(rows.length>1?'s':'')+' for '+icao;
+    status.textContent=notams.length+' NOTAM'+(notams.length>1?'s':'')+' for '+icao;
     status.style.color='var(--accent-amber)';
-
-    rows.forEach(function(n){
-      // autorouter fields: series, number, year, startvalidity, endvalidity, iteme (body text)
-      var notamId=(n.series||'')+(n.number||'')+(n.year?'/'+String(n.year).slice(-2):'');
-      var startTs=n.startvalidity||0;
-      var endTs=n.endvalidity||null;
-      var bodyText=(n.iteme||n.text||'').trim();
-      var isActive=startTs<=now&&(!endTs||endTs>now);
-
+    notams.forEach(function(n){
       var card=document.createElement('div');
       card.className='notam-card';
-      if(!isActive)card.style.opacity='0.55';
-
       var idEl=document.createElement('div');
       idEl.className='notam-id';
-      idEl.textContent=(notamId||'NOTAM')+(isActive?' ● ACTIVE':' ○ INACTIVE');
+      idEl.textContent=(n.id||'NOTAM')+' ● ACTIVE';
       card.appendChild(idEl);
-
-      var valEl=document.createElement('div');
-      valEl.className='notam-validity';
-      valEl.textContent='FROM: '+fmtTimestamp(startTs)+'  TO: '+(endTs?fmtTimestamp(endTs):'PERMANENT');
-      card.appendChild(valEl);
-
+      if(n.validity){
+        var valEl=document.createElement('div');
+        valEl.className='notam-validity';
+        valEl.textContent=n.validity;
+        card.appendChild(valEl);
+      }
       var txtEl=document.createElement('div');
       txtEl.className='notam-text';
-      txtEl.textContent=bodyText||('No text available');
+      txtEl.textContent=n.text||'';
       card.appendChild(txtEl);
-
       box.appendChild(card);
     });
   }
@@ -6420,43 +6400,46 @@ window.attachPostLoginHandlers = function(){
     }
     status.textContent='Fetching NOTAMs for '+icao+'...';
     status.style.color='var(--text-dim)';
-    box.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:10px 0;text-align:center">Loading...</div>';
+    box.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:10px 0;text-align:center">Asking AI to fetch NOTAMs...</div>';
 
-    // autorouter.aero — free, no API key, global NOTAM data from Eurocontrol EAD
-    var targetUrl='https://api.autorouter.aero/v1.0/notam?itemas=%5B%22'+icao+'%22%5D&limit=50';
+    try{
+      // Use Claude AI with web_search tool to fetch real NOTAMs from the FAA NOTAM search
+      var resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:2000,
+          tools:[{type:'web_search_20250305',name:'web_search'}],
+          system:'You are an aviation NOTAM retrieval assistant. When given an ICAO code, search for and return the current active NOTAMs for that airport. Search the FAA NOTAM search site or other authoritative sources. Return ONLY a JSON array with no markdown, no explanation. Each element: {"id":"NOTAM_ID","validity":"FROM: YYYY-MM-DD HHmmZ  TO: YYYY-MM-DD HHmmZ","text":"NOTAM body text"}. If no NOTAMs found return [].',
+          messages:[{role:'user',content:'Get all current active NOTAMs for ICAO airport code '+icao+'. Search notams.aim.faa.gov or similar source. Return JSON array only.'}]
+        })
+      });
 
-    var attempts=[
-      function(){ return fetch(targetUrl); },
-      function(){ return fetch('https://corsproxy.io/?'+encodeURIComponent(targetUrl)); },
-      function(){
-        return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(targetUrl))
-          .then(function(r){ return r.json(); })
-          .then(function(d){
-            return new Response(d.contents,{status:200,headers:{'Content-Type':'application/json'}});
-          });
+      if(!resp.ok)throw new Error('API error: '+resp.status);
+      var data=await resp.json();
+
+      // Extract the final text response
+      var textContent='';
+      if(data.content&&Array.isArray(data.content)){
+        data.content.forEach(function(block){
+          if(block.type==='text') textContent+=block.text;
+        });
       }
-    ];
 
-    var lastErr='';
-    for(var i=0;i<attempts.length;i++){
-      try{
-        status.textContent='Fetching NOTAMs for '+icao+'... '+(i===0?'direct':'proxy '+(i))+'...';
-        var resp=await attempts[i]();
-        if(!resp.ok)throw new Error('HTTP '+resp.status);
-        var data=await resp.json();
-        var rows=Array.isArray(data)?data:(data&&Array.isArray(data.rows)?data.rows:[]);
-        renderNotams(rows, icao);
-        return;
-      }catch(e){
-        lastErr=e.message||String(e);
-      }
+      // Parse JSON from response
+      var jsonMatch=textContent.match(/\[[\s\S]*\]/);
+      if(!jsonMatch)throw new Error('No JSON in response');
+      var notams=JSON.parse(jsonMatch[0]);
+      renderNotamCards(notams, icao);
+
+    }catch(e){
+      status.textContent='Failed to fetch NOTAMs for '+icao+'.';
+      status.style.color='var(--accent-red)';
+      box.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);line-height:1.7;padding:8px 0">'
+        +'Error: '+(e.message||String(e))+'<br><br>'
+        +'<span style="color:var(--text-dim)">Check your internet connection and try again.</span></div>';
     }
-
-    status.textContent='Could not fetch NOTAMs for '+icao+'.';
-    status.style.color='var(--accent-red)';
-    box.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);line-height:1.7;padding:8px 0">'
-      +'All fetch attempts failed.<br>Error: '+lastErr+'<br><br>'
-      +'<span style="color:var(--text-dim)">Check your internet connection and try again.</span></div>';
   }
 
   document.addEventListener('DOMContentLoaded',function(){

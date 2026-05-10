@@ -973,6 +973,7 @@ textarea{resize:vertical;min-height:55px}
   font-size:11px !important;padding:3px 8px !important;
 }
 .area-label::before{display:none !important}
+.area-name-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;}
 
 #jsonArea{font-size:11px;min-height:50px}
   /* ======== SAVED ROUTES MODAL ======== */
@@ -3007,7 +3008,7 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
     // Helper: create a floating text label marker at a given lat/lon
     function makeAreaLabel(lat,lon,name,color){
       const icon=L.divIcon({
-        className:'',
+        className:'area-name-label',
         html:`<div style="
           background:rgba(4,8,15,0.82);
           border:1px solid ${color||'#8b45c1'};
@@ -3021,7 +3022,9 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
           box-shadow:0 0 6px rgba(0,0,0,0.6);
           letter-spacing:0.5px;
         ">${name}</div>`,
-        iconAnchor:[0,0]
+        iconSize:null,
+        iconAnchor:[0,0],
+        shadowSize:[0,0]
       });
       return L.marker([lat,lon],{icon,interactive:false,keyboard:false,zIndexOffset:-100});
     }

@@ -974,6 +974,7 @@ textarea{resize:vertical;min-height:55px}
 }
 .area-label::before{display:none !important}
 .area-name-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;z-index:9999 !important;}
+.area-circ-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;}
 
 #jsonArea{font-size:11px;min-height:50px}
   /* ======== SAVED ROUTES MODAL ======== */
@@ -3019,85 +3020,43 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
       const circle=L.circle([centerWp.lat,centerWp.lon],{radius:radiusMeters,color,fillColor:'transparent',fillOpacity:0,weight:3}).addTo(map);
       areaPolygons[area.id]=circle;
 
-      // Inject SVG textPath along the circle's arc after Leaflet renders it
+      // Place a pure-text label at the top edge of the circle
       function injectCircleText(){
-        const svgEl=circle.getElement ? circle.getElement() : null;
-        if(!svgEl){ setTimeout(injectCircleText,80); return; }
-        const svg=svgEl.closest('svg')||svgEl.ownerSVGElement;
-        if(!svg){ setTimeout(injectCircleText,80); return; }
+        // Remove any old SVG label
+        const old=document.getElementById('area-txt-'+area.id);
+        if(old)old.parentNode.removeChild(old);
 
-        function buildArc(){
-          const old=document.getElementById('area-txt-'+area.id);
-          if(old)old.parentNode.removeChild(old);
+        // Calculate top-edge lat
+        const latOffset=radiusMeters/111320;
+        const topLat=centerWp.lat+latOffset;
 
-          const cp=map.latLngToLayerPoint([centerWp.lat,centerWp.lon]);
-          const edgePt=map.latLngToLayerPoint([centerWp.lat+radiusMeters/111320,centerWp.lon]);
-          const rPx=Math.abs(edgePt.y-cp.y);
-
-          const ns='http://www.w3.org/2000/svg';
-          const g=document.createElementNS(ns,'g');
-          g.id='area-txt-'+area.id;
-
-          // Estimate text pixel width (approx 7px per char at font-size 11)
-          const estTextW=area.name.length*7;
-          const arcLen=Math.PI*rPx; // half-circumference
-
-          if(rPx>=10 && arcLen>=estTextW*0.8){
-            // Enough room — place text along the top arc
-            const fontSize=Math.min(11,Math.max(7,Math.floor(arcLen/(area.name.length*1.1))));
-            const x0=cp.x-rPx, y0=cp.y;
-            const x1=cp.x+rPx, y1=cp.y;
-            const pathD=`M ${x0} ${y0} A ${rPx} ${rPx} 0 0 1 ${x1} ${y1}`;
-            const pathId=uid+'-path';
-
-            const defs=document.createElementNS(ns,'defs');
-            const defPath=document.createElementNS(ns,'path');
-            defPath.setAttribute('id',pathId);
-            defPath.setAttribute('d',pathD);
-            defPath.setAttribute('fill','none');
-            defs.appendChild(defPath);
-            g.appendChild(defs);
-
-            const txt=document.createElementNS(ns,'text');
-            txt.setAttribute('font-family','Share Tech Mono, monospace');
-            txt.setAttribute('font-size',String(fontSize));
-            txt.setAttribute('fill',color);
-            txt.setAttribute('opacity','0.9');
-            txt.setAttribute('letter-spacing','0.5');
-            const tp=document.createElementNS(ns,'textPath');
-            tp.setAttribute('href','#'+pathId);
-            tp.setAttribute('startOffset','50%');
-            tp.setAttribute('text-anchor','middle');
-            tp.textContent=area.name;
-            txt.appendChild(tp);
-            g.appendChild(txt);
-          } else {
-            // Too small for arc — draw straight horizontal label at center
-            const fontSize=Math.min(11,Math.max(6,Math.floor(rPx/2.2)));
-            const txt=document.createElementNS(ns,'text');
-            txt.setAttribute('x',String(cp.x));
-            txt.setAttribute('y',String(cp.y+fontSize*0.4));
-            txt.setAttribute('font-family','Share Tech Mono, monospace');
-            txt.setAttribute('font-size',String(fontSize));
-            txt.setAttribute('fill',color);
-            txt.setAttribute('opacity','0.9');
-            txt.setAttribute('text-anchor','middle');
-            txt.setAttribute('letter-spacing','0.5');
-            txt.textContent=area.name;
-            g.appendChild(txt);
-          }
-
-          svg.appendChild(g);
-        }
-
-        buildArc();
-        function onMapChange(){ if(document.getElementById('area-txt-'+area.id)) buildArc(); }
-        map.on('zoom move zoomend moveend',onMapChange);
-        circle.on('remove',function(){
-          map.off('zoom move zoomend moveend',onMapChange);
-          const el=document.getElementById('area-txt-'+area.id);
-          if(el)el.parentNode.removeChild(el);
+        // Build a pure CSS text-only divIcon — no box, no background
+        const icon=L.divIcon({
+          className:'area-circ-label',
+          html:`<span style="
+            font-family:'Share Tech Mono',monospace;
+            font-size:10px;
+            color:${color};
+            opacity:0.9;
+            white-space:nowrap;
+            pointer-events:none;
+            text-shadow:0 0 4px rgba(0,0,0,0.9),0 0 2px rgba(0,0,0,0.9);
+            letter-spacing:0.5px;
+          ">${area.name}</span>`,
+          iconSize:[1,1],
+          iconAnchor:[0,8],
+          shadowSize:[0,0]
         });
+        const lbl=L.marker([topLat,centerWp.lon],{icon,interactive:false,keyboard:false,zIndexOffset:500}).addTo(map);
+        areaLabelMarkers[area.id]=lbl;
+
+        // Update position on zoom since top-edge lat in pixels changes
+        function reposition(){
+          const latOff=radiusMeters/111320;
+          lbl.setLatLng([centerWp.lat+latOff,centerWp.lon]);
+        }
+        map.on('zoomend',reposition);
+        circle.on('remove',function(){ map.off('zoomend',reposition); });
       }
       injectCircleText();
 

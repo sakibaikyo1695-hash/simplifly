@@ -3026,54 +3026,71 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
         const svg=svgEl.closest('svg')||svgEl.ownerSVGElement;
         if(!svg){ setTimeout(injectCircleText,80); return; }
 
-        // Build an arc path in SVG pixel coords for the top half of the circle
         function buildArc(){
           const old=document.getElementById('area-txt-'+area.id);
           if(old)old.parentNode.removeChild(old);
 
           const cp=map.latLngToLayerPoint([centerWp.lat,centerWp.lon]);
-          // radius in pixels
           const edgePt=map.latLngToLayerPoint([centerWp.lat+radiusMeters/111320,centerWp.lon]);
           const rPx=Math.abs(edgePt.y-cp.y);
-          if(rPx<6)return; // too small to label
-
-          // Arc: start at left, sweep across top to right (top half of circle)
-          const x0=cp.x-rPx, y0=cp.y;
-          const x1=cp.x+rPx, y1=cp.y;
-          const pathD=`M ${x0} ${y0} A ${rPx} ${rPx} 0 0 1 ${x1} ${y1}`;
-          const pathId=uid+'-path';
 
           const ns='http://www.w3.org/2000/svg';
           const g=document.createElementNS(ns,'g');
           g.id='area-txt-'+area.id;
 
-          const defs=document.createElementNS(ns,'defs');
-          const defPath=document.createElementNS(ns,'path');
-          defPath.setAttribute('id',pathId);
-          defPath.setAttribute('d',pathD);
-          defPath.setAttribute('fill','none');
-          defs.appendChild(defPath);
-          g.appendChild(defs);
+          // Estimate text pixel width (approx 7px per char at font-size 11)
+          const estTextW=area.name.length*7;
+          const arcLen=Math.PI*rPx; // half-circumference
 
-          const txt=document.createElementNS(ns,'text');
-          txt.setAttribute('font-family','Share Tech Mono, monospace');
-          txt.setAttribute('font-size','11');
-          txt.setAttribute('fill',color);
-          txt.setAttribute('opacity','0.9');
-          txt.setAttribute('letter-spacing','1');
-          const tp=document.createElementNS(ns,'textPath');
-          tp.setAttribute('href','#'+pathId);
-          tp.setAttribute('startOffset','50%');
-          tp.setAttribute('text-anchor','middle');
-          tp.textContent=area.name;
-          txt.appendChild(tp);
-          g.appendChild(txt);
+          if(rPx>=10 && arcLen>=estTextW*0.8){
+            // Enough room — place text along the top arc
+            const fontSize=Math.min(11,Math.max(7,Math.floor(arcLen/(area.name.length*1.1))));
+            const x0=cp.x-rPx, y0=cp.y;
+            const x1=cp.x+rPx, y1=cp.y;
+            const pathD=`M ${x0} ${y0} A ${rPx} ${rPx} 0 0 1 ${x1} ${y1}`;
+            const pathId=uid+'-path';
+
+            const defs=document.createElementNS(ns,'defs');
+            const defPath=document.createElementNS(ns,'path');
+            defPath.setAttribute('id',pathId);
+            defPath.setAttribute('d',pathD);
+            defPath.setAttribute('fill','none');
+            defs.appendChild(defPath);
+            g.appendChild(defs);
+
+            const txt=document.createElementNS(ns,'text');
+            txt.setAttribute('font-family','Share Tech Mono, monospace');
+            txt.setAttribute('font-size',String(fontSize));
+            txt.setAttribute('fill',color);
+            txt.setAttribute('opacity','0.9');
+            txt.setAttribute('letter-spacing','0.5');
+            const tp=document.createElementNS(ns,'textPath');
+            tp.setAttribute('href','#'+pathId);
+            tp.setAttribute('startOffset','50%');
+            tp.setAttribute('text-anchor','middle');
+            tp.textContent=area.name;
+            txt.appendChild(tp);
+            g.appendChild(txt);
+          } else {
+            // Too small for arc — draw straight horizontal label at center
+            const fontSize=Math.min(11,Math.max(6,Math.floor(rPx/2.2)));
+            const txt=document.createElementNS(ns,'text');
+            txt.setAttribute('x',String(cp.x));
+            txt.setAttribute('y',String(cp.y+fontSize*0.4));
+            txt.setAttribute('font-family','Share Tech Mono, monospace');
+            txt.setAttribute('font-size',String(fontSize));
+            txt.setAttribute('fill',color);
+            txt.setAttribute('opacity','0.9');
+            txt.setAttribute('text-anchor','middle');
+            txt.setAttribute('letter-spacing','0.5');
+            txt.textContent=area.name;
+            g.appendChild(txt);
+          }
 
           svg.appendChild(g);
         }
 
         buildArc();
-        // Rebuild on every map move/zoom so text stays on shape
         function onMapChange(){ if(document.getElementById('area-txt-'+area.id)) buildArc(); }
         map.on('zoom move zoomend moveend',onMapChange);
         circle.on('remove',function(){
@@ -3099,45 +3116,68 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
           const old=document.getElementById('area-txt-'+area.id);
           if(old)old.parentNode.removeChild(old);
 
-          // Find the longest edge to place text along
           const pts=latlngs.map(ll=>map.latLngToLayerPoint(ll));
+          // Find the longest edge
           let bestI=0,bestLen=0;
           for(let i=0;i<pts.length;i++){
             const a=pts[i],b=pts[(i+1)%pts.length];
             const len=Math.hypot(b.x-a.x,b.y-a.y);
             if(len>bestLen){bestLen=len;bestI=i;}
           }
-          if(bestLen<20)return;
-          const pA=pts[bestI],pB=pts[(bestI+1)%pts.length];
-          // Always draw left→right so text reads normally
-          const [sA,sB]=pA.x<=pB.x?[pA,pB]:[pB,pA];
-          const pathId=uid+'-path';
+
           const ns='http://www.w3.org/2000/svg';
           const g=document.createElementNS(ns,'g');
           g.id='area-txt-'+area.id;
 
-          const defs=document.createElementNS(ns,'defs');
-          const defPath=document.createElementNS(ns,'path');
-          defPath.setAttribute('id',pathId);
-          defPath.setAttribute('d',`M ${sA.x} ${sA.y} L ${sB.x} ${sB.y}`);
-          defPath.setAttribute('fill','none');
-          defs.appendChild(defPath);
-          g.appendChild(defs);
+          const estTextW=area.name.length*7;
 
-          const txt=document.createElementNS(ns,'text');
-          txt.setAttribute('font-family','Share Tech Mono, monospace');
-          txt.setAttribute('font-size','11');
-          txt.setAttribute('fill',color);
-          txt.setAttribute('opacity','0.9');
-          txt.setAttribute('letter-spacing','1');
-          txt.setAttribute('dy','-3'); // sit just above the line
-          const tp=document.createElementNS(ns,'textPath');
-          tp.setAttribute('href','#'+pathId);
-          tp.setAttribute('startOffset','50%');
-          tp.setAttribute('text-anchor','middle');
-          tp.textContent=area.name;
-          txt.appendChild(tp);
-          g.appendChild(txt);
+          if(bestLen>=estTextW*0.7){
+            // Enough room — place text along the longest edge
+            const fontSize=Math.min(11,Math.max(7,Math.floor(bestLen/(area.name.length*1.1))));
+            const pA=pts[bestI],pB=pts[(bestI+1)%pts.length];
+            const [sA,sB]=pA.x<=pB.x?[pA,pB]:[pB,pA];
+            const pathId=uid+'-path';
+
+            const defs=document.createElementNS(ns,'defs');
+            const defPath=document.createElementNS(ns,'path');
+            defPath.setAttribute('id',pathId);
+            defPath.setAttribute('d',`M ${sA.x} ${sA.y} L ${sB.x} ${sB.y}`);
+            defPath.setAttribute('fill','none');
+            defs.appendChild(defPath);
+            g.appendChild(defs);
+
+            const txt=document.createElementNS(ns,'text');
+            txt.setAttribute('font-family','Share Tech Mono, monospace');
+            txt.setAttribute('font-size',String(fontSize));
+            txt.setAttribute('fill',color);
+            txt.setAttribute('opacity','0.9');
+            txt.setAttribute('letter-spacing','0.5');
+            txt.setAttribute('dy','-3');
+            const tp=document.createElementNS(ns,'textPath');
+            tp.setAttribute('href','#'+pathId);
+            tp.setAttribute('startOffset','50%');
+            tp.setAttribute('text-anchor','middle');
+            tp.textContent=area.name;
+            txt.appendChild(tp);
+            g.appendChild(txt);
+          } else {
+            // Too small — draw horizontal label at centroid
+            const cx=pts.reduce((s,p)=>s+p.x,0)/pts.length;
+            const cy=pts.reduce((s,p)=>s+p.y,0)/pts.length;
+            const fontSize=Math.min(11,Math.max(6,Math.floor(bestLen/area.name.length*1.2)));
+            const txt=document.createElementNS(ns,'text');
+            txt.setAttribute('x',String(cx));
+            txt.setAttribute('y',String(cy));
+            txt.setAttribute('font-family','Share Tech Mono, monospace');
+            txt.setAttribute('font-size',String(fontSize));
+            txt.setAttribute('fill',color);
+            txt.setAttribute('opacity','0.9');
+            txt.setAttribute('text-anchor','middle');
+            txt.setAttribute('letter-spacing','0.5');
+            txt.textContent=area.name;
+            g.appendChild(txt);
+          }
+
           svg.appendChild(g);
         }
 

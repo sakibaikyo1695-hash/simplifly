@@ -30,55 +30,6 @@ const fbDb  = firebase.database();
 // Keep user logged in across app restarts
 fbAuth.setPersistence('local').catch(function(){});
 
-/* ======== EMAILJS — approval & notification emails ========
-      Subject: "Your SIMPLIFLY account has been approved"
-      Body: "Dear {{to_name}}, your SIMPLIFLY account has been approved by the admin.
-             You can now log in at: https://your-github-pages-url
-             — SIMPLIFLY Admin ({{admin_email}})"
-   4. Replace the three values below with your actual IDs from EmailJS dashboard
-======================================================== */
-(function(){
-  var EMAILJS_PUBLIC_KEY  = 'Z2lt2X9CE7qs3u0vG';
-  var EMAILJS_SERVICE_ID  = 'service_chdtxqo';
-  var EMAILJS_TEMPLATE_ID = '5iif90j';
-
-  var _initialized = false;
-  function initEmailJS(){
-    if(_initialized) return;
-    if(typeof emailjs === 'undefined') return;
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-    _initialized = true;
-  }
-
-  window._sendApprovalEmail = function(toEmail, toName){
-    // Resend — free transactional email API, 100 emails/day, supports browser fetch
-    // Sign up free at resend.com, verify your email, get API key
-    var RESEND_API_KEY = 're_Rz4mMrmE_9Te6exjK3KXYgv1R3eRUWKWA';
-    if(RESEND_API_KEY === 'YOUR_RESEND_API_KEY'){
-      console.log('Resend key not set — email not sent to', toEmail);
-      return;
-    }
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + RESEND_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'SIMPLIFLY <onboarding@resend.dev>',
-        to: [toEmail],
-        subject: 'Welcome to SIMPLIFLY — Your Account is Approved',
-        html: '<p>Dear <b>' + toName + '</b>,</p>'
-            + '<p>Your <b>SIMPLIFLY</b> account has been approved by the admin.</p>'
-            + '<p>You can now log in with your registered email: <b>' + toEmail + '</b></p>'
-            + '<p>Welcome aboard and fly safe!</p>'
-            + '<p>— SIMPLIFLY Admin<br>sadman.aikyo3223@gmail.com</p>'
-      })
-    }).then(function(r){ return r.json(); })
-      .then(function(d){ console.log('Approval email sent:', d); })
-      .catch(function(e){ console.error('Email error:', e); });
-  };
-})();
 </script>
 <style>
 /* ======== ROOT VARIABLES ======== */
@@ -6835,15 +6786,6 @@ window.closeCrewPopup = function(){
     if(u.status!=='approved'){ var b=document.createElement('a'); b.className='btn small btn-green'; b.textContent='✅ APPROVE'; b.onclick=function(){
       fbDb.ref('users/'+u.uid+'/status').set('approved').then(function(){
         u.status='approved'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf);
-        // Fetch full user record to get email, then send approval email
-        fbDb.ref('users/'+u.uid).once('value').then(function(snap){
-          var userData = snap.val()||{};
-          var userEmail = userData.email || u.email || '';
-          var userName  = userData.displayName || u.displayName || userEmail;
-          console.log('Sending approval email to:', userEmail, 'name:', userName);
-          if(userEmail) window._sendApprovalEmail(userEmail, userName);
-          else console.warn('No email found for user', u.uid);
-        });
       });
     }; row.appendChild(b); }
     if(u.status==='approved'&&!isSelf){ var b=document.createElement('a'); b.className='btn small btn-red'; b.textContent='🚫 BAN'; b.onclick=function(){ if(!confirm('Ban '+( u.displayName||u.email)+'?')) return; fbDb.ref('users/'+u.uid+'/status').set('banned').then(function(){ u.status='banned'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf); }); }; row.appendChild(b); }

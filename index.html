@@ -10,8 +10,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<!-- ======== EMAILJS SDK ======== -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <!-- ======== FIREBASE SDK ======== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -41,7 +39,7 @@ fbAuth.setPersistence('local').catch(function(){});
 ======================================================== */
 (function(){
   var EMAILJS_PUBLIC_KEY  = 'Z2lt2X9CE7qs3u0vG';
-  var EMAILJS_SERVICE_ID  = 'service_b93usjh';
+  var EMAILJS_SERVICE_ID  = 'service_chdtxqo';
   var EMAILJS_TEMPLATE_ID = '5iif90j';
 
   var _initialized = false;
@@ -53,29 +51,32 @@ fbAuth.setPersistence('local').catch(function(){});
   }
 
   window._sendApprovalEmail = function(toEmail, toName){
-    function doSend(){
-      var params = {
-        to_email:   toEmail,
-        to_name:    toName || toEmail,
-        app_name:   'SIMPLIFLY',
-        admin_email:'sadman.aikyo3223@gmail.com',
-        app_url:    'SIMPLIFLY App'
-      };
-      console.log('EmailJS sending with params:', params);
-      emailjs.init(EMAILJS_PUBLIC_KEY);
-      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
-        .then(function(r){ console.log('Approval email sent OK:', r.status, r.text); })
-        .catch(function(err){ console.error('EmailJS send error:', JSON.stringify(err)); });
+    // Resend — free transactional email API, 100 emails/day, supports browser fetch
+    // Sign up free at resend.com, verify your email, get API key
+    var RESEND_API_KEY = 're_Rz4mMrmE_9Te6exjK3KXYgv1R3eRUWKWA';
+    if(RESEND_API_KEY === 'YOUR_RESEND_API_KEY'){
+      console.log('Resend key not set — email not sent to', toEmail);
+      return;
     }
-    if(typeof emailjs !== 'undefined'){
-      doSend();
-    } else {
-      // SDK not loaded yet — load it then send
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
-      s.onload = doSend;
-      document.head.appendChild(s);
-    }
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + RESEND_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'SIMPLIFLY <onboarding@resend.dev>',
+        to: [toEmail],
+        subject: 'Welcome to SIMPLIFLY — Your Account is Approved',
+        html: '<p>Dear <b>' + toName + '</b>,</p>'
+            + '<p>Your <b>SIMPLIFLY</b> account has been approved by the admin.</p>'
+            + '<p>You can now log in with your registered email: <b>' + toEmail + '</b></p>'
+            + '<p>Welcome aboard and fly safe!</p>'
+            + '<p>— SIMPLIFLY Admin<br>sadman.aikyo3223@gmail.com</p>'
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(d){ console.log('Approval email sent:', d); })
+      .catch(function(e){ console.error('Email error:', e); });
   };
 })();
 </script>

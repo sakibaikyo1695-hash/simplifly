@@ -973,7 +973,7 @@ textarea{resize:vertical;min-height:55px}
   font-size:11px !important;padding:3px 8px !important;
 }
 .area-label::before{display:none !important}
-.area-name-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;}
+.area-name-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;z-index:9999 !important;}
 
 #jsonArea{font-size:11px;min-height:50px}
   /* ======== SAVED ROUTES MODAL ======== */
@@ -3021,12 +3021,13 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
           pointer-events:none;
           box-shadow:0 0 6px rgba(0,0,0,0.6);
           letter-spacing:0.5px;
+          position:relative;z-index:9999;
         ">${name}</div>`,
-        iconSize:null,
+        iconSize:[1,1],
         iconAnchor:[0,0],
         shadowSize:[0,0]
       });
-      return L.marker([lat,lon],{icon,interactive:false,keyboard:false,zIndexOffset:-100});
+      return L.marker([lat,lon],{icon,interactive:false,keyboard:false,zIndexOffset:1000});
     }
 
     if(area.type==='circular'){

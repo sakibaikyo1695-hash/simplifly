@@ -6357,57 +6357,34 @@ window.attachPostLoginHandlers = function(){
 (function(){
   function pad(n){return String(n).padStart(2,'0');}
 
-  function parseNotamDate(s){
-    // Format: YYMMDDHHmm  e.g. 2504151200
-    if(!s||s.length<10)return null;
-    try{
-      var yr=2000+parseInt(s.substr(0,2));
-      var mo=parseInt(s.substr(2,2))-1;
-      var dy=parseInt(s.substr(4,2));
-      var hh=parseInt(s.substr(6,2));
-      var mm=parseInt(s.substr(8,2));
-      return new Date(Date.UTC(yr,mo,dy,hh,mm));
-    }catch(e){return null;}
-  }
-
-  function fmtDate(d){
-    if(!d)return '?';
+  function fmtTimestamp(ts){
+    // ts is Unix epoch seconds (autorouter format)
+    if(!ts)return '?';
+    var d=new Date(ts*1000);
     return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())
       +' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+'Z';
   }
 
-  // Extract key fields from raw NOTAM text
-  function parseNotam(raw){
-    var id='', b='', c='PERM', e='';
-    var mId=raw.match(/^([A-Z]\d+\/\d+)\s+NOTAM[NRC]/m);
-    if(mId)id=mId[1];
-    var mB=raw.match(/\bB\)\s*(\d{10})/);
-    if(mB)b=mB[1];
-    var mC=raw.match(/\bC\)\s*(\d{10}|PERM)/);
-    if(mC)c=mC[1];
-    var mE=raw.match(/\bE\)\s*([\s\S]+?)(?=\nF\)|\nG\)|\n[A-Z]\)|\s*$)/);
-    if(mE)e=mE[1].trim();
-    return {id,b,c,e,raw};
-  }
-
-  function renderNotams(notams, icao){
+  function renderNotams(rows, icao){
     var box=document.getElementById('notamResults');
     var status=document.getElementById('notamStatus');
     box.innerHTML='';
-    if(!notams||notams.length===0){
-      status.textContent='No active NOTAMs found for '+icao+'.';
+    if(!rows||rows.length===0){
+      status.textContent='No NOTAMs found for '+icao+'.';
       status.style.color='var(--accent-green)';
       return;
     }
-    status.textContent=notams.length+' NOTAM'+(notams.length>1?'s':'')+' for '+icao;
+    var now=Math.floor(Date.now()/1000);
+    status.textContent=rows.length+' NOTAM'+(rows.length>1?'s':'')+' for '+icao;
     status.style.color='var(--accent-amber)';
 
-    notams.forEach(function(raw){
-      var p=parseNotam(raw);
-      var bDate=parseNotamDate(p.b);
-      var cDate=p.c==='PERM'?null:parseNotamDate(p.c);
-      var now=new Date();
-      var isActive=(!bDate||bDate<=now)&&(p.c==='PERM'||!cDate||cDate>=now);
+    rows.forEach(function(n){
+      // autorouter fields: series, number, year, startvalidity, endvalidity, iteme (body text)
+      var notamId=(n.series||'')+(n.number||'')+(n.year?'/'+String(n.year).slice(-2):'');
+      var startTs=n.startvalidity||0;
+      var endTs=n.endvalidity||null;
+      var bodyText=(n.iteme||n.text||'').trim();
+      var isActive=startTs<=now&&(!endTs||endTs>now);
 
       var card=document.createElement('div');
       card.className='notam-card';
@@ -6415,33 +6392,18 @@ window.attachPostLoginHandlers = function(){
 
       var idEl=document.createElement('div');
       idEl.className='notam-id';
-      idEl.textContent=(p.id||'NOTAM')+(isActive?' ● ACTIVE':' ○ INACTIVE');
+      idEl.textContent=(notamId||'NOTAM')+(isActive?' ● ACTIVE':' ○ INACTIVE');
       card.appendChild(idEl);
 
       var valEl=document.createElement('div');
       valEl.className='notam-validity';
-      valEl.textContent='FROM: '+(bDate?fmtDate(bDate):'?')
-        +'  TO: '+(p.c==='PERM'?'PERMANENT':cDate?fmtDate(cDate):'?');
+      valEl.textContent='FROM: '+fmtTimestamp(startTs)+'  TO: '+(endTs?fmtTimestamp(endTs):'PERMANENT');
       card.appendChild(valEl);
 
       var txtEl=document.createElement('div');
       txtEl.className='notam-text';
-      txtEl.textContent=p.e||p.raw;
+      txtEl.textContent=bodyText||('No text available');
       card.appendChild(txtEl);
-
-      // Expand/collapse full raw text
-      if(p.e && p.raw){
-        var tog=document.createElement('a');
-        tog.textContent='▶ SHOW FULL NOTAM';
-        tog.style.cssText='display:block;margin-top:6px;font-family:var(--font-display);font-size:9px;letter-spacing:1px;color:var(--accent-blue);cursor:pointer;';
-        var expanded=false;
-        tog.onclick=function(){
-          expanded=!expanded;
-          txtEl.textContent=expanded?p.raw:p.e;
-          tog.textContent=expanded?'▼ HIDE FULL NOTAM':'▶ SHOW FULL NOTAM';
-        };
-        card.appendChild(tog);
-      }
 
       box.appendChild(card);
     });
@@ -6460,52 +6422,41 @@ window.attachPostLoginHandlers = function(){
     status.style.color='var(--text-dim)';
     box.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:10px 0;text-align:center">Loading...</div>';
 
-    var targetUrl='https://aviationweather.gov/api/data/notam?ids='+icao+'&format=json';
+    // autorouter.aero — free, no API key, global NOTAM data from Eurocontrol EAD
+    var targetUrl='https://api.autorouter.aero/v1.0/notam?itemas=%5B%22'+icao+'%22%5D&limit=50';
 
-    // Try direct, then CORS proxies in order
     var attempts=[
-      {label:'direct', fetch: function(){ return fetch(targetUrl); }},
-      {label:'proxy1', fetch: function(){
-        return fetch('https://corsproxy.io/?'+encodeURIComponent(targetUrl));
-      }},
-      {label:'proxy2', fetch: function(){
+      function(){ return fetch(targetUrl); },
+      function(){ return fetch('https://corsproxy.io/?'+encodeURIComponent(targetUrl)); },
+      function(){
         return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(targetUrl))
           .then(function(r){ return r.json(); })
           .then(function(d){
-            // allorigins wraps in {contents: '...'}
-            return new Response(d.contents, {status:200, headers:{'Content-Type':'application/json'}});
+            return new Response(d.contents,{status:200,headers:{'Content-Type':'application/json'}});
           });
-      }}
+      }
     ];
 
     var lastErr='';
     for(var i=0;i<attempts.length;i++){
       try{
-        status.textContent='Fetching NOTAMs for '+icao+'... (attempt '+(i+1)+')';
-        var resp=await attempts[i].fetch();
+        status.textContent='Fetching NOTAMs for '+icao+'... '+(i===0?'direct':'proxy '+(i))+'...';
+        var resp=await attempts[i]();
         if(!resp.ok)throw new Error('HTTP '+resp.status);
         var data=await resp.json();
-
-        var rawList=[];
-        if(Array.isArray(data)){
-          data.forEach(function(n){
-            var t=n.raw||n.text||n.notamText||n.message||'';
-            if(t)rawList.push(t);
-          });
-        }
-        renderNotams(rawList, icao);
-        return; // success
+        var rows=Array.isArray(data)?data:(data&&Array.isArray(data.rows)?data.rows:[]);
+        renderNotams(rows, icao);
+        return;
       }catch(e){
         lastErr=e.message||String(e);
       }
     }
 
-    // All failed
     status.textContent='Could not fetch NOTAMs for '+icao+'.';
     status.style.color='var(--accent-red)';
     box.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);line-height:1.7;padding:8px 0">'
       +'All fetch attempts failed.<br>Error: '+lastErr+'<br><br>'
-      +'<span style="color:var(--text-dim)">This may be a network restriction on your device or the CORS proxies may be temporarily unavailable. Try again shortly.</span></div>';
+      +'<span style="color:var(--text-dim)">Check your internet connection and try again.</span></div>';
   }
 
   document.addEventListener('DOMContentLoaded',function(){

@@ -2534,6 +2534,8 @@ function initializeApp(){
             map.removeLayer(areaLabelMarkers[area.id]);
             delete areaLabelMarkers[area.id];
           }
+          const el=document.getElementById('area-txt-'+area.id);
+          if(el)el.parentNode.removeChild(el);
         }
         saveLocal();
       };
@@ -3001,53 +3003,154 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
   ================================================ */
   function drawArea(area){
     if(areaPolygons[area.id])map.removeLayer(areaPolygons[area.id]);
+    // Remove old SVG text label if any
+    const oldTxt=document.getElementById('area-txt-'+area.id);
+    if(oldTxt)oldTxt.parentNode.removeChild(oldTxt);
     if(areaLabelMarkers[area.id])map.removeLayer(areaLabelMarkers[area.id]);
-    // Only draw if visible (default true for new areas)
+
     if(areaVisible[area.id]===false)return;
 
-    // Helper: create a floating text label marker at a given lat/lon
-    function makeAreaLabel(lat,lon,name,color){
-      const icon=L.divIcon({
-        className:'area-name-label',
-        html:`<div style="
-          background:rgba(4,8,15,0.82);
-          border:1px solid ${color||'#8b45c1'};
-          border-radius:4px;
-          padding:2px 7px;
-          font-family:'Share Tech Mono',monospace;
-          font-size:11px;
-          color:${color||'#8b45c1'};
-          white-space:nowrap;
-          pointer-events:none;
-          box-shadow:0 0 6px rgba(0,0,0,0.6);
-          letter-spacing:0.5px;
-          position:relative;z-index:9999;
-        ">${name}</div>`,
-        iconSize:[1,1],
-        iconAnchor:[0,0],
-        shadowSize:[0,0]
-      });
-      return L.marker([lat,lon],{icon,interactive:false,keyboard:false,zIndexOffset:1000});
-    }
+    const color=area.color||(area.type==='circular'?'#ff0000':'#8b45c1');
+    const uid='area-'+area.id+'-'+Date.now();
 
     if(area.type==='circular'){
       const centerWp=waypoints.find(w=>w.name===area.centerWaypoint);if(!centerWp)return;
       const radiusMeters=(area.diameter/2)*1852;
-      const circle=L.circle([centerWp.lat,centerWp.lon],{radius:radiusMeters,color:area.color||'#ff0000',fillColor:'transparent',fillOpacity:0,weight:3}).addTo(map);
+      const circle=L.circle([centerWp.lat,centerWp.lon],{radius:radiusMeters,color,fillColor:'transparent',fillOpacity:0,weight:3}).addTo(map);
       areaPolygons[area.id]=circle;
-      // Place label at the top edge of the circle (not center)
-      const latOffset=radiusMeters/111320; // metres → degrees lat
-      const labelLat=centerWp.lat+latOffset;
-      const labelMarker=makeAreaLabel(labelLat,centerWp.lon,area.name,area.color||'#ff0000').addTo(map);
-      areaLabelMarkers[area.id]=labelMarker;
+
+      // Inject SVG textPath along the circle's arc after Leaflet renders it
+      function injectCircleText(){
+        const svgEl=circle.getElement ? circle.getElement() : null;
+        if(!svgEl){ setTimeout(injectCircleText,80); return; }
+        const svg=svgEl.closest('svg')||svgEl.ownerSVGElement;
+        if(!svg){ setTimeout(injectCircleText,80); return; }
+
+        // Build an arc path in SVG pixel coords for the top half of the circle
+        function buildArc(){
+          const old=document.getElementById('area-txt-'+area.id);
+          if(old)old.parentNode.removeChild(old);
+
+          const cp=map.latLngToLayerPoint([centerWp.lat,centerWp.lon]);
+          // radius in pixels
+          const edgePt=map.latLngToLayerPoint([centerWp.lat+radiusMeters/111320,centerWp.lon]);
+          const rPx=Math.abs(edgePt.y-cp.y);
+          if(rPx<6)return; // too small to label
+
+          // Arc: start at left, sweep across top to right (top half of circle)
+          const x0=cp.x-rPx, y0=cp.y;
+          const x1=cp.x+rPx, y1=cp.y;
+          const pathD=`M ${x0} ${y0} A ${rPx} ${rPx} 0 0 1 ${x1} ${y1}`;
+          const pathId=uid+'-path';
+
+          const ns='http://www.w3.org/2000/svg';
+          const g=document.createElementNS(ns,'g');
+          g.id='area-txt-'+area.id;
+
+          const defs=document.createElementNS(ns,'defs');
+          const defPath=document.createElementNS(ns,'path');
+          defPath.setAttribute('id',pathId);
+          defPath.setAttribute('d',pathD);
+          defPath.setAttribute('fill','none');
+          defs.appendChild(defPath);
+          g.appendChild(defs);
+
+          const txt=document.createElementNS(ns,'text');
+          txt.setAttribute('font-family','Share Tech Mono, monospace');
+          txt.setAttribute('font-size','11');
+          txt.setAttribute('fill',color);
+          txt.setAttribute('opacity','0.9');
+          txt.setAttribute('letter-spacing','1');
+          const tp=document.createElementNS(ns,'textPath');
+          tp.setAttribute('href','#'+pathId);
+          tp.setAttribute('startOffset','50%');
+          tp.setAttribute('text-anchor','middle');
+          tp.textContent=area.name;
+          txt.appendChild(tp);
+          g.appendChild(txt);
+
+          svg.appendChild(g);
+        }
+
+        buildArc();
+        // Rebuild on every map move/zoom so text stays on shape
+        function onMapChange(){ if(document.getElementById('area-txt-'+area.id)) buildArc(); }
+        map.on('zoom move zoomend moveend',onMapChange);
+        circle.on('remove',function(){
+          map.off('zoom move zoomend moveend',onMapChange);
+          const el=document.getElementById('area-txt-'+area.id);
+          if(el)el.parentNode.removeChild(el);
+        });
+      }
+      injectCircleText();
+
     }else{
-      const latlngs=area.corners.map(c=>[c.lat,c.lon]),areaColor=area.color||'#8b45c1';
-      const polygon=L.polygon(latlngs,{color:areaColor,fillColor:areaColor,fillOpacity:0.2,weight:2}).addTo(map);
+      const latlngs=area.corners.map(c=>[c.lat,c.lon]);
+      const polygon=L.polygon(latlngs,{color,fillColor:color,fillOpacity:0.2,weight:2}).addTo(map);
       areaPolygons[area.id]=polygon;
-      // Place label at the topmost corner of the polygon
-      const topCorner=area.corners.reduce((best,c)=>c.lat>best.lat?c:best,area.corners[0]);
-      const labelMarker=makeAreaLabel(topCorner.lat,topCorner.lon,area.name,areaColor).addTo(map);
-      areaLabelMarkers[area.id]=labelMarker;
+
+      function injectPolyText(){
+        const svgEl=polygon.getElement ? polygon.getElement() : null;
+        if(!svgEl){ setTimeout(injectPolyText,80); return; }
+        const svg=svgEl.closest('svg')||svgEl.ownerSVGElement;
+        if(!svg){ setTimeout(injectPolyText,80); return; }
+
+        function buildPolyLabel(){
+          const old=document.getElementById('area-txt-'+area.id);
+          if(old)old.parentNode.removeChild(old);
+
+          // Find the longest edge to place text along
+          const pts=latlngs.map(ll=>map.latLngToLayerPoint(ll));
+          let bestI=0,bestLen=0;
+          for(let i=0;i<pts.length;i++){
+            const a=pts[i],b=pts[(i+1)%pts.length];
+            const len=Math.hypot(b.x-a.x,b.y-a.y);
+            if(len>bestLen){bestLen=len;bestI=i;}
+          }
+          if(bestLen<20)return;
+          const pA=pts[bestI],pB=pts[(bestI+1)%pts.length];
+          // Always draw left→right so text reads normally
+          const [sA,sB]=pA.x<=pB.x?[pA,pB]:[pB,pA];
+          const pathId=uid+'-path';
+          const ns='http://www.w3.org/2000/svg';
+          const g=document.createElementNS(ns,'g');
+          g.id='area-txt-'+area.id;
+
+          const defs=document.createElementNS(ns,'defs');
+          const defPath=document.createElementNS(ns,'path');
+          defPath.setAttribute('id',pathId);
+          defPath.setAttribute('d',`M ${sA.x} ${sA.y} L ${sB.x} ${sB.y}`);
+          defPath.setAttribute('fill','none');
+          defs.appendChild(defPath);
+          g.appendChild(defs);
+
+          const txt=document.createElementNS(ns,'text');
+          txt.setAttribute('font-family','Share Tech Mono, monospace');
+          txt.setAttribute('font-size','11');
+          txt.setAttribute('fill',color);
+          txt.setAttribute('opacity','0.9');
+          txt.setAttribute('letter-spacing','1');
+          txt.setAttribute('dy','-3'); // sit just above the line
+          const tp=document.createElementNS(ns,'textPath');
+          tp.setAttribute('href','#'+pathId);
+          tp.setAttribute('startOffset','50%');
+          tp.setAttribute('text-anchor','middle');
+          tp.textContent=area.name;
+          txt.appendChild(tp);
+          g.appendChild(txt);
+          svg.appendChild(g);
+        }
+
+        buildPolyLabel();
+        function onMapChange(){ if(document.getElementById('area-txt-'+area.id)) buildPolyLabel(); }
+        map.on('zoom move zoomend moveend',onMapChange);
+        polygon.on('remove',function(){
+          map.off('zoom move zoomend moveend',onMapChange);
+          const el=document.getElementById('area-txt-'+area.id);
+          if(el)el.parentNode.removeChild(el);
+        });
+      }
+      injectPolyText();
     }
   }
 
@@ -3195,6 +3298,8 @@ function addWaypoint(lat,lon,name,markerType='default',info='',existingId=null){
       areas=areas.filter(a=>a.id!==areaId);
       if(areaPolygons[areaId]){map.removeLayer(areaPolygons[areaId]);delete areaPolygons[areaId];}
       if(areaLabelMarkers[areaId]){map.removeLayer(areaLabelMarkers[areaId]);delete areaLabelMarkers[areaId];}
+      const el=document.getElementById('area-txt-'+areaId);
+      if(el)el.parentNode.removeChild(el);
       delete areaVisible[areaId];
       renderAreaList();saveLocal();
     }

@@ -33,7 +33,7 @@ fbAuth.setPersistence('local').catch(function(){});
 <style>
 /* ======== ROOT VARIABLES ======== */
 :root{
-  /* Civil Aviation / EFB Colour Scheme */
+  /* EFB Colour Scheme */
   --bg-deep:#0e1117;
   --bg-panel:#161b25;
   --bg-card:#1c2230;
@@ -1254,7 +1254,7 @@ textarea{resize:vertical;min-height:55px}
 <div id="splashOverlay">
   <div class="splash-box">
     <div class="splash-title">✈ SIMPLIFLY</div>
-    <div class="splash-sub">CIVIL AIR NAVIGATION SYSTEM</div>
+    <div class="splash-sub">AIR NAVIGATION SYSTEM</div>
 
     <div class="splash-section">
       <div class="splash-section-title">⚠️ IMPORTANT DISCLAIMER</div>
@@ -1381,7 +1381,7 @@ textarea{resize:vertical;min-height:55px}
   <!-- Header -->
 <div class="sidebar-header">
     <h1>SIMPLIFLY</h1>
-    <div class="subtitle">CIVIL AIR NAVIGATION SYSTEM</div>
+    <div class="subtitle">AIR NAVIGATION SYSTEM</div>
     <div style="display:flex;gap:10px;margin-top:8px">
       <div style="flex:1;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:var(--radius);padding:5px 8px;text-align:center">
         <div style="font-family:var(--font-display);font-size:8px;letter-spacing:2px;color:var(--text-dim);margin-bottom:2px">GMT / ZULU</div>
@@ -1460,6 +1460,7 @@ textarea{resize:vertical;min-height:55px}
       <div id="gpsInfo">
         <div class="gps-row"><span class="gps-label">GPS SPEED</span><span class="gps-value" id="gpsSpeed">-- kts</span></div>
         <div class="gps-row"><span class="gps-label">COURSE OG</span><span class="gps-value" id="gpsCourse">--°</span></div>
+        <div class="gps-row"><span class="gps-label">ALTITUDE</span><span class="gps-value" id="gpsAltitude">-- ft</span></div>
       </div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-dim)">
         <div class="btn-row">
@@ -1626,7 +1627,7 @@ textarea{resize:vertical;min-height:55px}
 <div id="adminBtnContainer" style="display:none;padding:8px 14px 0">
   <button id="openAdminPanelBtn" class="btn full" style="background:rgba(255,171,0,0.14);border-color:rgba(255,171,0,0.6);color:var(--accent-amber);font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:1.5px">⚙️ ADMIN PANEL</button>
 </div>
-<div id="credit">SIMPLIFLY · CIVIL AVIATION EDITION</div>
+<div id="credit">SIMPLIFLY · AIR NAVIGATION EDITION</div>
 <div style="text-align:center;padding:4px 14px 10px;font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">
   📧 <a href="mailto:sadman.aikyo3223@gmail.com" style="color:var(--text-dim);text-decoration:none">sadman.aikyo3223@gmail.com</a>
 </div>
@@ -1840,7 +1841,7 @@ textarea{resize:vertical;min-height:55px}
           ✅ Fwd Seat FITTED &nbsp;<span style="color:var(--text-dim);font-size:10px">(18.00 kg included in basic weight — tap to remove)</span>
         </button>
       </div>
-      <!-- SP equipment section (hidden in civil version) -->
+      <!-- SP equipment section (hidden in general version) -->
       <div id="bfSpRemovableDiv" style="display:none;margin-bottom:8px">
         <div style="font-size:10px;letter-spacing:1px;color:var(--accent-amber);margin-bottom:4px">ITEMS IN BASIC WT — UNCHECK TO REMOVE</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:11px;margin-bottom:6px">
@@ -2168,7 +2169,7 @@ textarea{resize:vertical;min-height:55px}
 <div id="authScreen">
   <div class="auth-box">
     <div class="auth-logo">SIMPLIFLY</div>
-    <div class="auth-subtitle">CIVIL AIR NAVIGATION SYSTEM</div>
+    <div class="auth-subtitle">AIR NAVIGATION SYSTEM</div>
     <div id="authLogin">
       <div class="auth-title">SIGN IN</div>
       <div class="auth-field"><label>EMAIL</label><input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email"></div>
@@ -2620,10 +2621,12 @@ function renderWaypointListFiltered(filter){
   /* ================================================
      GPS
   ================================================ */
-  function updateGPSInfo(speed,heading){
+  function updateGPSInfo(speed,heading,altFt){
     lastSpeedGPS=speed;lastCourseGPS=heading;
     gpsSpeedSpan.textContent=speed.toFixed(1)+' kts';
     gpsCourseSpan.textContent=heading.toFixed(1)+'°';
+    const altEl=document.getElementById('gpsAltitude');
+    if(altEl) altEl.textContent=(altFt!=null&&!isNaN(altFt))?Math.round(altFt)+' ft':'-- ft';
     if(flyMarker)flyMarker.setIcon(createHelicopterIcon(heading));
   }
 
@@ -2881,6 +2884,12 @@ window.deleteWaypoint=function(id){
       deleteAllPlatesForWaypoint(id); // clean up IndexedDB
       waypoints=waypoints.filter(w=>w.id!==id);map.removeLayer(markers[id]);delete markers[id];
       renderList();saveLocal();
+      // If the waypoint list modal is open, re-render it instantly
+      const listModal=document.getElementById('waypointListModal');
+      if(listModal&&listModal.style.display==='block'){
+        const searchVal=document.getElementById('waypointSearchInput')?.value||'';
+        renderWaypointListFiltered(searchVal);
+      }
     }
   };
   window.selectWaypoint=function(id){
@@ -3261,8 +3270,9 @@ document.getElementById('confirmExportBtn').onclick=function(){
       flyWatchId=navigator.geolocation.watchPosition(pos=>{
         const lat=pos.coords.latitude,lon=pos.coords.longitude,
               speed=1.94384*(pos.coords.speed||0),
-              heading=null!==pos.coords.heading&&undefined!==pos.coords.heading?pos.coords.heading:lastCourseGPS;
-        updateGPSInfo(speed,heading);flyMarker.setLatLng([lat,lon]);
+              heading=null!==pos.coords.heading&&undefined!==pos.coords.heading?pos.coords.heading:lastCourseGPS,
+              altFt=pos.coords.altitude!=null?pos.coords.altitude*3.28084:null;
+        updateGPSInfo(speed,heading,altFt);flyMarker.setLatLng([lat,lon]);
         coordsOut.textContent=formatDMS(lat,true)+', '+formatDMS(lon,false);
         map.setView([lat,lon]);updateRouteSummary();
         if(movingTrackActive)updateMovingTrack();
@@ -3293,8 +3303,9 @@ document.getElementById('confirmExportBtn').onclick=function(){
       flyWatchId=navigator.geolocation.watchPosition(pos=>{
         const lat=pos.coords.latitude,lon=pos.coords.longitude,
               speed=1.94384*(pos.coords.speed||0),
-              heading=null!==pos.coords.heading&&undefined!==pos.coords.heading?pos.coords.heading:lastCourseGPS;
-        updateGPSInfo(speed,heading);flyMarker.setLatLng([lat,lon]);
+              heading=null!==pos.coords.heading&&undefined!==pos.coords.heading?pos.coords.heading:lastCourseGPS,
+              altFt=pos.coords.altitude!=null?pos.coords.altitude*3.28084:null;
+        updateGPSInfo(speed,heading,altFt);flyMarker.setLatLng([lat,lon]);
         coordsOut.textContent=formatDMS(lat,true)+', '+formatDMS(lon,false);
         map.setView([lat,lon]);
         const target=waypoints.find(w=>w.id===directTargetId);if(!target)return;
@@ -3986,7 +3997,7 @@ document.getElementById('importBtn').onclick=()=>{
 
   /* ---- Step navigation ---- */
     window.bfGoStep = function(step){
-    // Civil flow: step1=details, step3=route&fuel, step5=print
+    // Flow: step1=details, step3=route&fuel, step5=print
     // Map user step numbers to actual HTML step divs
     const stepMap = {1:1, 2:3, 3:5, 4:5, 5:5};
     const actualDiv = stepMap[step] || step;
@@ -4832,7 +4843,7 @@ document.getElementById('importBtn').onclick=()=>{
       </div>
     </div>
 
-    <div class="credit">SIMPLIFLY · CIVIL AIR NAVIGATION SYSTEM</div>
+    <div class="credit">SIMPLIFLY · AIR NAVIGATION SYSTEM</div>
     <script>window.onload=function(){window.print();};<\/script>
     </body></html>`;
 
@@ -4995,7 +5006,7 @@ document.getElementById('importBtn').onclick=()=>{
     <div class="notam" style="min-height:28px">${g('bf_special').replace(/\n/g,'<br>')}</div>
 
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;border-top:1px solid #ccc;padding-top:8px">
-      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; CIVIL AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
+      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
       <div style="text-align:center;min-width:200px">
         <div style="border-bottom:1px solid #000;height:36px;margin-bottom:4px"></div>
         <div style="font-size:9px;font-weight:700;letter-spacing:1px">SIGNATURE OF PIC</div>
@@ -5218,7 +5229,7 @@ document.getElementById('importBtn').onclick=()=>{
     <div class="notam" style="min-height:28px">${g('bf_special').replace(/\n/g,'<br>')}</div>
 
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;border-top:1px solid #ccc;padding-top:8px">
-      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; CIVIL AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
+      <div class="credit" style="margin:0;border:none;padding:0">SIMPLIFLY &nbsp;|&nbsp; AIR NAVIGATION SYSTEM &nbsp;|&nbsp; Generated: ${dtStr}</div>
       <div style="text-align:center;min-width:200px">
         <div style="border-bottom:1px solid #000;height:36px;margin-bottom:4px"></div>
         <div style="font-size:9px;font-weight:700;letter-spacing:1px">SIGNATURE OF PIC</div>

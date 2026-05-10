@@ -1388,8 +1388,16 @@ textarea{resize:vertical;min-height:55px}
         <div id="clockGMT" style="font-family:var(--font-mono);font-size:14px;color:var(--accent-amber);letter-spacing:1px"></div>
       </div>
       <div style="flex:1;background:var(--bg-card);border:1px solid var(--border-glow);border-radius:var(--radius);padding:5px 8px;text-align:center">
-        <div style="font-family:var(--font-display);font-size:8px;letter-spacing:2px;color:var(--text-dim);margin-bottom:2px">LOCAL TIME</div>
+        <div id="localTimeLabel" style="font-family:var(--font-display);font-size:8px;letter-spacing:2px;color:var(--text-dim);margin-bottom:2px">LOCAL TIME</div>
         <div id="clockBD" style="font-family:var(--font-mono);font-size:14px;color:var(--accent-cyan);letter-spacing:1px"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:var(--radius);padding:4px 8px">
+      <span style="font-family:var(--font-display);font-size:8px;letter-spacing:1.5px;color:var(--text-dim)">UTC OFFSET</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button id="utcOffsetMinus" style="width:22px;height:22px;background:rgba(0,170,255,0.12);border:1px solid rgba(0,170,255,0.35);color:var(--accent-cyan);border-radius:4px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+        <span id="utcOffsetDisplay" style="font-family:var(--font-mono);font-size:12px;color:var(--accent-cyan);min-width:46px;text-align:center">+00:00</span>
+        <button id="utcOffsetPlus" style="width:22px;height:22px;background:rgba(0,170,255,0.12);border:1px solid rgba(0,170,255,0.35);color:var(--accent-cyan);border-radius:4px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
       </div>
     </div>
   </div>
@@ -6042,18 +6050,96 @@ if('serviceWorker'in navigator){
       .catch(err=>console.error('SW registration failed',err));
   });
 }
-// Dual clock — GMT and BD (UTC+6)
+// Dual clock — GMT and Local (region-aware, manually adjustable)
 (function(){
-  function updateClocks(){
-    const now=new Date();
-    const pad=n=>String(n).padStart(2,'0');
-    const gmtH=pad(now.getUTCHours()),gmtM=pad(now.getUTCMinutes()),gmtS=pad(now.getUTCSeconds());
-    document.getElementById('clockGMT').textContent=gmtH+':'+gmtM+':'+gmtS+'Z';
-    const bdOffset=6*60;
-    const bdTotal=now.getUTCHours()*60+now.getUTCMinutes()+bdOffset;
-    const bdH=pad(Math.floor(bdTotal/60)%24),bdM=pad(now.getUTCMinutes()),bdS=pad(now.getUTCSeconds());
-    document.getElementById('clockBD').textContent=bdH+':'+bdM+':'+bdS+'L';
+  // UTC offsets in minutes for each region preset
+  var REGION_OFFSETS = {
+    'Bangladesh':+360,'India':+330,'Nepal':+345,'Sri Lanka':+330,
+    'Myanmar':+390,'Thailand':+420,'Malaysia':+480,'Singapore':+480,
+    'Indonesia':+420,'Philippines':+480,'Vietnam':+420,'UAE':+240,
+    'Saudi Arabia':+180,'Qatar':+180,'Oman':+240,'Pakistan':+300,
+    'Kenya':+180,'Nigeria':+60,'South Africa':+120,'Australia':+570,
+    'New Zealand':+720,'United Kingdom':+60,'Germany':+120,'France':+60,
+    'USA (East)':-300,'USA (West)':-480,'Canada':-300,'Brazil':-180,
+    'China':+480,'Japan':+540
+  };
+
+  var LOCAL_OFFSET_KEY = 'simplifly_local_offset_min';
+  var currentOffsetMin = 0;
+
+  // Load saved offset or derive from saved region
+  function initOffset(){
+    var saved = localStorage.getItem(LOCAL_OFFSET_KEY);
+    if(saved !== null){
+      currentOffsetMin = parseInt(saved) || 0;
+    } else {
+      // Derive from saved region
+      try{
+        var r = JSON.parse(localStorage.getItem('simplifly_home_region') || 'null');
+        if(r && REGION_OFFSETS[r.name] !== undefined){
+          currentOffsetMin = REGION_OFFSETS[r.name];
+        }
+      }catch(e){}
+    }
+    renderOffsetDisplay();
   }
+
+  function saveOffset(){
+    localStorage.setItem(LOCAL_OFFSET_KEY, currentOffsetMin);
+  }
+
+  function renderOffsetDisplay(){
+    var el = document.getElementById('utcOffsetDisplay');
+    if(!el) return;
+    var sign = currentOffsetMin >= 0 ? '+' : '-';
+    var abs = Math.abs(currentOffsetMin);
+    var h = String(Math.floor(abs/60)).padStart(2,'0');
+    var m = String(abs%60).padStart(2,'0');
+    el.textContent = sign+h+':'+m;
+  }
+
+  function updateClocks(){
+    var now = new Date();
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    // GMT/Zulu
+    var gmtH=pad(now.getUTCHours()),gmtM=pad(now.getUTCMinutes()),gmtS=pad(now.getUTCSeconds());
+    document.getElementById('clockGMT').textContent=gmtH+':'+gmtM+':'+gmtS+'Z';
+    // Local
+    var utcMin = now.getUTCHours()*60 + now.getUTCMinutes() + currentOffsetMin;
+    var locH = pad(((Math.floor(utcMin/60))%24+24)%24);
+    var locM = pad(((utcMin%60)+60)%60);
+    var locS = pad(now.getUTCSeconds());
+    document.getElementById('clockBD').textContent=locH+':'+locM+':'+locS+'L';
+  }
+
+  // Wire +/- buttons (30-min steps)
+  document.addEventListener('DOMContentLoaded', function(){
+    var btnMinus = document.getElementById('utcOffsetMinus');
+    var btnPlus  = document.getElementById('utcOffsetPlus');
+    if(btnMinus) btnMinus.onclick = function(){
+      currentOffsetMin -= 30;
+      if(currentOffsetMin < -720) currentOffsetMin = -720;
+      saveOffset(); renderOffsetDisplay(); updateClocks();
+    };
+    if(btnPlus) btnPlus.onclick = function(){
+      currentOffsetMin += 30;
+      if(currentOffsetMin > 840) currentOffsetMin = 840;
+      saveOffset(); renderOffsetDisplay(); updateClocks();
+    };
+  });
+
+  // Public: called when a region is saved/applied so clock auto-updates
+  window._setLocalOffsetFromRegion = function(regionName){
+    if(REGION_OFFSETS[regionName] !== undefined){
+      currentOffsetMin = REGION_OFFSETS[regionName];
+      // Clear any manual override so region drives the clock
+      localStorage.removeItem(LOCAL_OFFSET_KEY);
+      renderOffsetDisplay();
+      updateClocks();
+    }
+  };
+
+  initOffset();
   updateClocks();
   setInterval(updateClocks,1000);
 })();
@@ -7317,6 +7403,8 @@ window.closeCrewPopup = function(){
 
       localStorage.setItem(REGION_KEY, JSON.stringify(region));
       applyRegion(region);
+      // Auto-update local clock offset when region changes
+      if(window._setLocalOffsetFromRegion) window._setLocalOffsetFromRegion(region.name);
       document.getElementById('regionModal').style.display = 'none';
     };
   });
@@ -7328,7 +7416,11 @@ window.closeCrewPopup = function(){
       setTimeout(function(){ window.showRegionSelector(); }, 600);
     } else {
       // Apply the saved region now that auth is done and map is ready
-      try{ applyRegion(JSON.parse(saved)); }catch(e){}
+      try{
+        var r = JSON.parse(saved);
+        applyRegion(r);
+        if(window._setLocalOffsetFromRegion) window._setLocalOffsetFromRegion(r.name);
+      }catch(e){}
     }
   };
 

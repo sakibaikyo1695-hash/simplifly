@@ -976,6 +976,26 @@ textarea{resize:vertical;min-height:55px}
 .area-name-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;z-index:9999 !important;}
 .area-circ-label{background:none !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;}
 
+/* ======== NOTAM CARDS ======== */
+.notam-card{
+  background:var(--bg-deep);border:1px solid rgba(192,57,43,0.35);
+  border-left:3px solid var(--accent-red);border-radius:6px;
+  padding:10px 12px;margin-bottom:8px;
+}
+.notam-card:last-child{margin-bottom:0}
+.notam-id{
+  font-family:var(--font-display);font-size:10px;font-weight:700;
+  letter-spacing:1.5px;color:var(--accent-red);margin-bottom:4px;
+}
+.notam-validity{
+  font-family:var(--font-mono);font-size:9px;color:var(--text-dim);
+  margin-bottom:6px;letter-spacing:0.5px;
+}
+.notam-text{
+  font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);
+  line-height:1.7;white-space:pre-wrap;word-break:break-word;
+}
+
 #jsonArea{font-size:11px;min-height:50px}
   /* ======== SAVED ROUTES MODAL ======== */
 #saveRouteModal,#savedRoutesModal{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;display:none;padding:16px;overflow:auto;backdrop-filter:blur(4px)}
@@ -1600,6 +1620,26 @@ textarea{resize:vertical;min-height:55px}
  <!-- PRINT FLIGHT BRIEF -->
   <div class="section" style="padding-bottom:14px">
     <a id="printBriefBtn" class="btn full" style="background:rgba(255,171,0,0.18);border-color:rgba(255,171,0,0.7);color:#ffab00;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:2px;padding:12px;box-shadow:0 0 14px rgba(255,171,0,0.2)">🖨️ PRINT BRIEF</a>
+  </div>
+
+  <!-- NOTAM -->
+  <div class="section">
+    <div class="section-label" id="notamMenuToggle" style="cursor:pointer;user-select:none">
+      ⚠️ NOTAM
+      <span id="notamMenuArrow" style="margin-left:auto;color:var(--accent-red);font-size:11px">▶ EXPAND</span>
+    </div>
+    <div id="notamMenuPanel" style="display:none;margin-top:8px">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.6">
+        Enter an ICAO code (e.g. VGEG, VGZR) to fetch active NOTAMs.
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="text" id="notamIcaoInput" placeholder="ICAO (e.g. VGEG)" maxlength="4"
+          style="flex:1;text-transform:uppercase;font-size:13px;letter-spacing:2px"/>
+        <button id="notamSearchBtn" class="btn btn-red" style="flex-shrink:0;padding:8px 12px;font-size:12px">🔍</button>
+      </div>
+      <div id="notamStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:6px;min-height:14px"></div>
+      <div id="notamResults" style="max-height:420px;overflow-y:auto"></div>
+    </div>
   </div>
 
   <!-- DOCUMENTS LIBRARY -->
@@ -6301,7 +6341,165 @@ window.attachPostLoginHandlers = function(){
   document.getElementById('closeUserGuideBtn').onclick=function(){
     document.getElementById('userGuideModal').style.display='none';
   };
+  // NOTAM section toggle
+  document.getElementById('notamMenuToggle').onclick=function(){
+    var panel=document.getElementById('notamMenuPanel');
+    var arrow=document.getElementById('notamMenuArrow');
+    var open=panel.style.display==='block';
+    panel.style.display=open?'none':'block';
+    arrow.textContent=open?'▶ EXPAND':'▼ COLLAPSE';
+  };
 };
+
+/* ====================================================
+   NOTAM FEATURE
+==================================================== */
+(function(){
+  function pad(n){return String(n).padStart(2,'0');}
+
+  function parseNotamDate(s){
+    // Format: YYMMDDHHmm  e.g. 2504151200
+    if(!s||s.length<10)return null;
+    try{
+      var yr=2000+parseInt(s.substr(0,2));
+      var mo=parseInt(s.substr(2,2))-1;
+      var dy=parseInt(s.substr(4,2));
+      var hh=parseInt(s.substr(6,2));
+      var mm=parseInt(s.substr(8,2));
+      return new Date(Date.UTC(yr,mo,dy,hh,mm));
+    }catch(e){return null;}
+  }
+
+  function fmtDate(d){
+    if(!d)return '?';
+    return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())
+      +' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+'Z';
+  }
+
+  // Extract key fields from raw NOTAM text
+  function parseNotam(raw){
+    var id='', b='', c='PERM', e='';
+    var mId=raw.match(/^([A-Z]\d+\/\d+)\s+NOTAM[NRC]/m);
+    if(mId)id=mId[1];
+    var mB=raw.match(/\bB\)\s*(\d{10})/);
+    if(mB)b=mB[1];
+    var mC=raw.match(/\bC\)\s*(\d{10}|PERM)/);
+    if(mC)c=mC[1];
+    var mE=raw.match(/\bE\)\s*([\s\S]+?)(?=\nF\)|\nG\)|\n[A-Z]\)|\s*$)/);
+    if(mE)e=mE[1].trim();
+    return {id,b,c,e,raw};
+  }
+
+  function renderNotams(notams, icao){
+    var box=document.getElementById('notamResults');
+    var status=document.getElementById('notamStatus');
+    box.innerHTML='';
+    if(!notams||notams.length===0){
+      status.textContent='No active NOTAMs found for '+icao+'.';
+      status.style.color='var(--accent-green)';
+      return;
+    }
+    status.textContent=notams.length+' NOTAM'+(notams.length>1?'s':'')+' for '+icao;
+    status.style.color='var(--accent-amber)';
+
+    notams.forEach(function(raw){
+      var p=parseNotam(raw);
+      var bDate=parseNotamDate(p.b);
+      var cDate=p.c==='PERM'?null:parseNotamDate(p.c);
+      var now=new Date();
+      var isActive=(!bDate||bDate<=now)&&(p.c==='PERM'||!cDate||cDate>=now);
+
+      var card=document.createElement('div');
+      card.className='notam-card';
+      if(!isActive)card.style.opacity='0.55';
+
+      var idEl=document.createElement('div');
+      idEl.className='notam-id';
+      idEl.textContent=(p.id||'NOTAM')+(isActive?' ● ACTIVE':' ○ INACTIVE');
+      card.appendChild(idEl);
+
+      var valEl=document.createElement('div');
+      valEl.className='notam-validity';
+      valEl.textContent='FROM: '+(bDate?fmtDate(bDate):'?')
+        +'  TO: '+(p.c==='PERM'?'PERMANENT':cDate?fmtDate(cDate):'?');
+      card.appendChild(valEl);
+
+      var txtEl=document.createElement('div');
+      txtEl.className='notam-text';
+      txtEl.textContent=p.e||p.raw;
+      card.appendChild(txtEl);
+
+      // Expand/collapse full raw text
+      if(p.e && p.raw){
+        var tog=document.createElement('a');
+        tog.textContent='▶ SHOW FULL NOTAM';
+        tog.style.cssText='display:block;margin-top:6px;font-family:var(--font-display);font-size:9px;letter-spacing:1px;color:var(--accent-blue);cursor:pointer;';
+        var expanded=false;
+        tog.onclick=function(){
+          expanded=!expanded;
+          txtEl.textContent=expanded?p.raw:p.e;
+          tog.textContent=expanded?'▼ HIDE FULL NOTAM':'▶ SHOW FULL NOTAM';
+        };
+        card.appendChild(tog);
+      }
+
+      box.appendChild(card);
+    });
+  }
+
+  async function fetchNotams(icao){
+    var status=document.getElementById('notamStatus');
+    var box=document.getElementById('notamResults');
+    icao=icao.trim().toUpperCase();
+    if(icao.length<3||icao.length>4){
+      status.textContent='Please enter a valid 3-4 letter ICAO code.';
+      status.style.color='var(--accent-red)';
+      return;
+    }
+    status.textContent='Fetching NOTAMs for '+icao+'...';
+    status.style.color='var(--text-dim)';
+    box.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:10px 0;text-align:center">Loading...</div>';
+
+    try{
+      // aviationweather.gov — free, no API key required
+      var url='https://aviationweather.gov/api/data/notam?ids='+icao+'&format=json';
+      var resp=await fetch(url);
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      var data=await resp.json();
+
+      // Response is array of NOTAM objects with a 'raw' or 'text' field
+      var rawList=[];
+      if(Array.isArray(data)){
+        data.forEach(function(n){
+          var t=n.raw||n.text||n.notamText||n.message||'';
+          if(t)rawList.push(t);
+        });
+      }
+      renderNotams(rawList, icao);
+    }catch(e){
+      status.textContent='Failed to fetch NOTAMs. Check your connection.';
+      status.style.color='var(--accent-red)';
+      document.getElementById('notamResults').innerHTML=
+        '<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);padding:8px 0">'+
+        'Error: '+(e.message||'Unknown error')+'<br><br>'+
+        'Note: aviationweather.gov covers most ICAO codes globally. '+
+        'Some smaller aerodromes may not have NOTAMs listed.</div>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    var btn=document.getElementById('notamSearchBtn');
+    var inp=document.getElementById('notamIcaoInput');
+    if(!btn||!inp)return;
+    btn.onclick=function(){ fetchNotams(inp.value); };
+    inp.addEventListener('keypress',function(e){
+      if(e.key==='Enter') fetchNotams(inp.value);
+    });
+    inp.addEventListener('input',function(){
+      this.value=this.value.toUpperCase();
+    });
+  });
+})();
 
 /* ====================================================
    PILL BUTTON TOGGLE — FLYING FEATURES

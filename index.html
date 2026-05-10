@@ -53,21 +53,29 @@ fbAuth.setPersistence('local').catch(function(){});
   }
 
   window._sendApprovalEmail = function(toEmail, toName){
-    initEmailJS();
-    if(typeof emailjs === 'undefined' || EMAILJS_PUBLIC_KEY === 'YOUR_EMAILJS_PUBLIC_KEY'){
-      console.log('EmailJS not configured — approval email not sent to', toEmail);
-      return;
+    function doSend(){
+      var params = {
+        to_email:   toEmail,
+        to_name:    toName || toEmail,
+        app_name:   'SIMPLIFLY',
+        admin_email:'sadman.aikyo3223@gmail.com',
+        app_url:    'SIMPLIFLY App'
+      };
+      console.log('EmailJS sending with params:', params);
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
+        .then(function(r){ console.log('Approval email sent OK:', r.status, r.text); })
+        .catch(function(err){ console.error('EmailJS send error:', JSON.stringify(err)); });
     }
-    var params = {
-      to_email:   toEmail,
-      to_name:    toName || toEmail,
-      app_name:   'SIMPLIFLY',
-      admin_email:'sadman.aikyo3223@gmail.com',
-      app_url:    window.location.origin + window.location.pathname
-    };
-    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
-      .then(function(){ console.log('Approval email sent to', toEmail); })
-      .catch(function(err){ console.error('EmailJS error:', err); });
+    if(typeof emailjs !== 'undefined'){
+      doSend();
+    } else {
+      // SDK not loaded yet — load it then send
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+      s.onload = doSend;
+      document.head.appendChild(s);
+    }
   };
 })();
 </script>
@@ -6826,8 +6834,15 @@ window.closeCrewPopup = function(){
     if(u.status!=='approved'){ var b=document.createElement('a'); b.className='btn small btn-green'; b.textContent='✅ APPROVE'; b.onclick=function(){
       fbDb.ref('users/'+u.uid+'/status').set('approved').then(function(){
         u.status='approved'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf);
-        // Send approval email via EmailJS
-        window._sendApprovalEmail(u.email, u.displayName||u.email);
+        // Fetch full user record to get email, then send approval email
+        fbDb.ref('users/'+u.uid).once('value').then(function(snap){
+          var userData = snap.val()||{};
+          var userEmail = userData.email || u.email || '';
+          var userName  = userData.displayName || u.displayName || userEmail;
+          console.log('Sending approval email to:', userEmail, 'name:', userName);
+          if(userEmail) window._sendApprovalEmail(userEmail, userName);
+          else console.warn('No email found for user', u.uid);
+        });
       });
     }; row.appendChild(b); }
     if(u.status==='approved'&&!isSelf){ var b=document.createElement('a'); b.className='btn small btn-red'; b.textContent='🚫 BAN'; b.onclick=function(){ if(!confirm('Ban '+( u.displayName||u.email)+'?')) return; fbDb.ref('users/'+u.uid+'/status').set('banned').then(function(){ u.status='banned'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf); }); }; row.appendChild(b); }

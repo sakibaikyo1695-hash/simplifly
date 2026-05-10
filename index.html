@@ -2335,6 +2335,13 @@ function initializeApp(){
   /* -- MAP INIT -- */
   const map=L.map('map',{zoomControl:true,dragging:true,touchZoom:true,doubleClickZoom:true,scrollWheelZoom:true}).setView([20.0,0.0],2);
   window._mapInstance=map; // for sidebar toggle invalidateSize
+  // Apply saved home region immediately after map creation
+  (function(){
+    try{
+      var saved=localStorage.getItem('simplifly_home_region');
+      if(saved){ var r=JSON.parse(saved); map.setView([r.lat,r.lon],r.zoom); }
+    }catch(e){}
+  })();
 
   // Stop floating buttons from triggering map clicks — Android WebView / APK
   var floatBtns = document.getElementById('mapFloatingBtns');

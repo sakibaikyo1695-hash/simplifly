@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- ======== EMAILJS SDK ======== -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <!-- ======== FIREBASE SDK ======== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -29,6 +31,135 @@ const fbAuth = firebase.auth();
 const fbDb  = firebase.database();
 // Keep user logged in across app restarts
 fbAuth.setPersistence('local').catch(function(){});
+
+/* ======== PASSWORD RESET LINK HANDLER ========
+   Detects ?mode=resetPassword&oobCode=XXX in the URL
+   and shows the set-new-password form instead of the normal app
+======================================================== */
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  var mode   = params.get('mode');
+  var oobCode= params.get('oobCode');
+
+  if(mode !== 'resetPassword' || !oobCode) return; // not a reset link, continue normally
+
+  // Hide splash, show auth screen with reset panel immediately
+  document.addEventListener('DOMContentLoaded', function(){
+    // Hide splash screen
+    var splash = document.getElementById('splashOverlay');
+    if(splash) splash.style.display = 'none';
+
+    // Show auth screen, hide all panels, show reset panel
+    var authScreen = document.getElementById('authScreen');
+    if(authScreen) authScreen.classList.remove('hidden');
+
+    ['authLogin','authRegister','authPending'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+
+    var resetPanel = document.getElementById('authResetPassword');
+    if(resetPanel) resetPanel.style.display = 'block';
+
+    // Verify the code is valid first
+    fbAuth.verifyPasswordResetCode(oobCode).then(function(email){
+      var msg = document.getElementById('resetMsg');
+      if(msg){ msg.textContent = 'Resetting password for: ' + email; msg.className = 'auth-msg info'; }
+    }).catch(function(){
+      var msg = document.getElementById('resetMsg');
+      if(msg){ msg.textContent = 'This reset link has expired or already been used. Please request a new one.'; msg.className = 'auth-msg error'; }
+      var btn = document.getElementById('resetSubmitBtn');
+      if(btn){ btn.disabled = true; btn.style.opacity = '0.4'; }
+    });
+
+    // Handle submit
+    document.getElementById('resetSubmitBtn').onclick = function(){
+      var newPass    = document.getElementById('resetNewPassword').value;
+      var confirmPass= document.getElementById('resetConfirmPassword').value;
+      var msg        = document.getElementById('resetMsg');
+      var btn        = document.getElementById('resetSubmitBtn');
+
+      if(newPass.length < 6){
+        msg.textContent = 'Password must be at least 6 characters.';
+        msg.className = 'auth-msg error'; return;
+      }
+      if(newPass !== confirmPass){
+        msg.textContent = 'Passwords do not match.';
+        msg.className = 'auth-msg error'; return;
+      }
+
+      btn.disabled = true; btn.textContent = 'Saving...';
+      fbAuth.confirmPasswordReset(oobCode, newPass).then(function(){
+        msg.textContent = '✅ Password updated! You can now log in with your new password.';
+        msg.className = 'auth-msg success';
+        btn.style.display = 'none';
+        // After 2 seconds redirect to login
+        setTimeout(function(){
+          // Clear the oobCode from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Show login panel
+          resetPanel.style.display = 'none';
+          var loginPanel = document.getElementById('authLogin');
+          if(loginPanel) loginPanel.style.display = 'block';
+        }, 2500);
+      }).catch(function(err){
+        msg.textContent = 'Error: ' + (err.message || 'Could not reset password. Link may have expired.');
+        msg.className = 'auth-msg error';
+        btn.disabled = false; btn.textContent = '✅ SET NEW PASSWORD';
+      });
+    };
+
+    // Also handle Enter key
+    ['resetNewPassword','resetConfirmPassword'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener('keypress', function(e){
+        if(e.key === 'Enter') document.getElementById('resetSubmitBtn').click();
+      });
+    });
+  });
+})();
+   Setup steps (one-time, free):
+   1. Go to https://www.emailjs.com and create a free account
+   2. Add an Email Service (Gmail recommended — connect your sadman.aikyo3223@gmail.com)
+   3. Create an Email Template with these variables:
+        {{to_email}}  {{to_name}}  {{app_name}}  {{admin_email}}
+      Subject: "Your SIMPLIFLY account has been approved"
+      Body: "Dear {{to_name}}, your SIMPLIFLY account has been approved by the admin.
+             You can now log in at: https://your-github-pages-url
+             — SIMPLIFLY Admin ({{admin_email}})"
+   4. Replace the three values below with your actual IDs from EmailJS dashboard
+======================================================== */
+(function(){
+  var EMAILJS_PUBLIC_KEY  = 'YOUR_EMAILJS_PUBLIC_KEY';   // e.g. 'user_abc123xyz'
+  var EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';            // e.g. 'service_gmail'
+  var EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';           // e.g. 'template_approve'
+
+  var _initialized = false;
+  function initEmailJS(){
+    if(_initialized) return;
+    if(typeof emailjs === 'undefined') return;
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    _initialized = true;
+  }
+
+  window._sendApprovalEmail = function(toEmail, toName){
+    initEmailJS();
+    if(typeof emailjs === 'undefined' || EMAILJS_PUBLIC_KEY === 'YOUR_EMAILJS_PUBLIC_KEY'){
+      console.log('EmailJS not configured — approval email not sent to', toEmail);
+      return;
+    }
+    var params = {
+      to_email:   toEmail,
+      to_name:    toName || toEmail,
+      app_name:   'SIMPLIFLY',
+      admin_email:'sadman.aikyo3223@gmail.com',
+      app_url:    window.location.origin + window.location.pathname
+    };
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
+      .then(function(){ console.log('Approval email sent to', toEmail); })
+      .catch(function(err){ console.error('EmailJS error:', err); });
+  };
+})();
 </script>
 <style>
 /* ======== ROOT VARIABLES ======== */
@@ -2257,6 +2388,21 @@ textarea{resize:vertical;min-height:55px}
         <a href="mailto:sadman.aikyo3223@gmail.com" style="display:inline-block;font-family:var(--font-mono);font-size:12px;color:var(--accent-cyan);text-decoration:none;background:rgba(61,184,245,0.1);border:1px solid rgba(61,184,245,0.3);border-radius:5px;padding:6px 14px;margin-bottom:18px;letter-spacing:0.5px">📧 sadman.aikyo3223@gmail.com</a>
         <button class="auth-btn secondary" id="pendingLogoutBtn">SIGN OUT</button>
       </div>
+    </div>
+    <!-- PASSWORD RESET PANEL — shown when user clicks link from email -->
+    <div id="authResetPassword" style="display:none">
+      <div class="auth-title">SET NEW PASSWORD</div>
+      <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:16px">Enter your new password below.</p>
+      <div class="auth-field">
+        <label>NEW PASSWORD (min 6 characters)</label>
+        <input type="password" id="resetNewPassword" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="auth-field">
+        <label>CONFIRM NEW PASSWORD</label>
+        <input type="password" id="resetConfirmPassword" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <button class="auth-btn" id="resetSubmitBtn">✅ SET NEW PASSWORD</button>
+      <div class="auth-msg" id="resetMsg"></div>
     </div>
   </div>
 </div>
@@ -6781,7 +6927,13 @@ window.closeCrewPopup = function(){
 
   function renderAdminActions(u,isSelf){
     var row=document.getElementById('actions-'+u.uid); if(!row) return; row.innerHTML='';
-    if(u.status!=='approved'){ var b=document.createElement('a'); b.className='btn small btn-green'; b.textContent='✅ APPROVE'; b.onclick=function(){ fbDb.ref('users/'+u.uid+'/status').set('approved').then(function(){ u.status='approved'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf); }); }; row.appendChild(b); }
+    if(u.status!=='approved'){ var b=document.createElement('a'); b.className='btn small btn-green'; b.textContent='✅ APPROVE'; b.onclick=function(){
+      fbDb.ref('users/'+u.uid+'/status').set('approved').then(function(){
+        u.status='approved'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf);
+        // Send approval email via EmailJS
+        window._sendApprovalEmail(u.email, u.displayName||u.email);
+      });
+    }; row.appendChild(b); }
     if(u.status==='approved'&&!isSelf){ var b=document.createElement('a'); b.className='btn small btn-red'; b.textContent='🚫 BAN'; b.onclick=function(){ if(!confirm('Ban '+( u.displayName||u.email)+'?')) return; fbDb.ref('users/'+u.uid+'/status').set('banned').then(function(){ u.status='banned'; updateCardBadge(u,'status'); renderAdminActions(u,isSelf); }); }; row.appendChild(b); }
     if(u.role!=='admin'&&!isSelf){ var b=document.createElement('a'); b.className='btn small btn-amber'; b.textContent='⭐ MAKE ADMIN'; b.onclick=function(){ if(!confirm('Give admin to '+(u.displayName||u.email)+'?')) return; fbDb.ref('users/'+u.uid+'/role').set('admin').then(function(){ u.role='admin'; updateCardBadge(u,'role'); renderAdminActions(u,isSelf); }); }; row.appendChild(b); }
     if(u.role==='admin'&&!isSelf){ var b=document.createElement('a'); b.className='btn small btn-purple'; b.textContent='↓ REMOVE ADMIN'; b.onclick=function(){ if(!confirm('Remove admin from '+(u.displayName||u.email)+'?')) return; fbDb.ref('users/'+u.uid+'/role').set('user').then(function(){ u.role='user'; updateCardBadge(u,'role'); renderAdminActions(u,isSelf); }); }; row.appendChild(b); }
@@ -7494,7 +7646,13 @@ window.closeCrewPopup = function(){
 
     document.getElementById('profileChangePassBtn').onclick=function(){
       var user=fbAuth.currentUser; if(!user||!user.email) return;
-      fbAuth.sendPasswordResetEmail(user.email).then(function(){
+      // actionCodeSettings points to your real GitHub Pages domain
+      // This makes Firebase send from a trusted URL = better inbox delivery
+      var actionCodeSettings={
+        url: window.location.origin + window.location.pathname,
+        handleCodeInApp: false
+      };
+      fbAuth.sendPasswordResetEmail(user.email, actionCodeSettings).then(function(){
         setProfileMsg(profilePassMsg,'Reset email sent to '+user.email,'success');
         setTimeout(function(){ setProfileMsg(profilePassMsg,'',''); },5000);
       }).catch(function(err){ setProfileMsg(profilePassMsg,'Error: '+err.message,'error'); });

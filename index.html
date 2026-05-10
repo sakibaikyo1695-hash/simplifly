@@ -7655,13 +7655,7 @@ window.closeCrewPopup = function(){
 
     document.getElementById('profileChangePassBtn').onclick=function(){
       var user=fbAuth.currentUser; if(!user||!user.email) return;
-      // actionCodeSettings points to your real GitHub Pages domain
-      // This makes Firebase send from a trusted URL = better inbox delivery
-      var actionCodeSettings={
-        url: window.location.origin + window.location.pathname,
-        handleCodeInApp: false
-      };
-      fbAuth.sendPasswordResetEmail(user.email, actionCodeSettings).then(function(){
+      fbAuth.sendPasswordResetEmail(user.email).then(function(){
         setProfileMsg(profilePassMsg,'Reset email sent to '+user.email,'success');
         setTimeout(function(){ setProfileMsg(profilePassMsg,'',''); },5000);
       }).catch(function(err){ setProfileMsg(profilePassMsg,'Error: '+err.message,'error'); });

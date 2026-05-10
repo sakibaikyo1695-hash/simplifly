@@ -7215,16 +7215,13 @@ window.closeCrewPopup = function(){
       window._mapInstance.setView([r.lat, r.lon], r.zoom);
     }
   }
-
-  // ── Load saved region on app start ───────────────
-  var saved = localStorage.getItem(REGION_KEY);
-  if(saved){
-    try{
-      var r = JSON.parse(saved);
-      // Apply after map is ready (slight delay)
-      setTimeout(function(){ applyRegion(r); }, 300);
-    }catch(e){}
-  }
+  // Expose so auth flow can call it after login
+  window._applyHomeRegion = function(){
+    var saved = localStorage.getItem(REGION_KEY);
+    if(saved){
+      try{ applyRegion(JSON.parse(saved)); }catch(e){}
+    }
+  };
 
   // ── Build the grid of region buttons ─────────────
   function buildGrid(){
@@ -7317,10 +7314,14 @@ window.closeCrewPopup = function(){
     };
   });
 
-  // ── Auto-show on first login if no region saved ──
+  // ── Auto-show on first login if no region saved, else apply saved ──
   window._checkShowRegionSelector = function(){
-    if(!localStorage.getItem(REGION_KEY)){
+    var saved = localStorage.getItem(REGION_KEY);
+    if(!saved){
       setTimeout(function(){ window.showRegionSelector(); }, 600);
+    } else {
+      // Apply the saved region now that auth is done and map is ready
+      try{ applyRegion(JSON.parse(saved)); }catch(e){}
     }
   };
 

@@ -6460,31 +6460,52 @@ window.attachPostLoginHandlers = function(){
     status.style.color='var(--text-dim)';
     box.innerHTML='<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);padding:10px 0;text-align:center">Loading...</div>';
 
-    try{
-      // aviationweather.gov — free, no API key required
-      var url='https://aviationweather.gov/api/data/notam?ids='+icao+'&format=json';
-      var resp=await fetch(url);
-      if(!resp.ok)throw new Error('HTTP '+resp.status);
-      var data=await resp.json();
+    var targetUrl='https://aviationweather.gov/api/data/notam?ids='+icao+'&format=json';
 
-      // Response is array of NOTAM objects with a 'raw' or 'text' field
-      var rawList=[];
-      if(Array.isArray(data)){
-        data.forEach(function(n){
-          var t=n.raw||n.text||n.notamText||n.message||'';
-          if(t)rawList.push(t);
-        });
+    // Try direct, then CORS proxies in order
+    var attempts=[
+      {label:'direct', fetch: function(){ return fetch(targetUrl); }},
+      {label:'proxy1', fetch: function(){
+        return fetch('https://corsproxy.io/?'+encodeURIComponent(targetUrl));
+      }},
+      {label:'proxy2', fetch: function(){
+        return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(targetUrl))
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            // allorigins wraps in {contents: '...'}
+            return new Response(d.contents, {status:200, headers:{'Content-Type':'application/json'}});
+          });
+      }}
+    ];
+
+    var lastErr='';
+    for(var i=0;i<attempts.length;i++){
+      try{
+        status.textContent='Fetching NOTAMs for '+icao+'... (attempt '+(i+1)+')';
+        var resp=await attempts[i].fetch();
+        if(!resp.ok)throw new Error('HTTP '+resp.status);
+        var data=await resp.json();
+
+        var rawList=[];
+        if(Array.isArray(data)){
+          data.forEach(function(n){
+            var t=n.raw||n.text||n.notamText||n.message||'';
+            if(t)rawList.push(t);
+          });
+        }
+        renderNotams(rawList, icao);
+        return; // success
+      }catch(e){
+        lastErr=e.message||String(e);
       }
-      renderNotams(rawList, icao);
-    }catch(e){
-      status.textContent='Failed to fetch NOTAMs. Check your connection.';
-      status.style.color='var(--accent-red)';
-      document.getElementById('notamResults').innerHTML=
-        '<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);padding:8px 0">'+
-        'Error: '+(e.message||'Unknown error')+'<br><br>'+
-        'Note: aviationweather.gov covers most ICAO codes globally. '+
-        'Some smaller aerodromes may not have NOTAMs listed.</div>';
     }
+
+    // All failed
+    status.textContent='Could not fetch NOTAMs for '+icao+'.';
+    status.style.color='var(--accent-red)';
+    box.innerHTML='<div style="font-family:var(--font-mono);font-size:10px;color:var(--accent-red);line-height:1.7;padding:8px 0">'
+      +'All fetch attempts failed.<br>Error: '+lastErr+'<br><br>'
+      +'<span style="color:var(--text-dim)">This may be a network restriction on your device or the CORS proxies may be temporarily unavailable. Try again shortly.</span></div>';
   }
 
   document.addEventListener('DOMContentLoaded',function(){

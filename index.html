@@ -32,103 +32,6 @@ const fbDb  = firebase.database();
 // Keep user logged in across app restarts
 fbAuth.setPersistence('local').catch(function(){});
 
-/* ======== PASSWORD RESET LINK HANDLER ========
-   Detects ?mode=resetPassword&oobCode=XXX in the URL
-   and shows the set-new-password form instead of the normal app
-======================================================== */
-(function(){
-  var params = new URLSearchParams(window.location.search);
-  var mode   = params.get('mode');
-  var oobCode= params.get('oobCode');
-
-  if(mode !== 'resetPassword' || !oobCode) return; // not a reset link, continue normally
-
-  // Tell the auth gate to stay out of the way while reset is in progress
-  window._resetModeActive = true;
-
-  document.addEventListener('DOMContentLoaded', function(){
-    // Hide splash screen
-    var splash = document.getElementById('splashOverlay');
-    if(splash) splash.style.display = 'none';
-
-    // Sign out any existing session so onAuthStateChanged doesn't interfere
-    fbAuth.signOut().then(function(){
-      showResetPanel();
-    }).catch(function(){
-      showResetPanel(); // show panel even if sign-out fails
-    });
-
-    function showResetPanel(){
-      // Show auth screen with reset panel only
-      var authScreen = document.getElementById('authScreen');
-      if(authScreen) authScreen.classList.remove('hidden');
-
-      ['authLogin','authRegister','authPending'].forEach(function(id){
-        var el = document.getElementById(id);
-        if(el) el.style.display = 'none';
-      });
-
-      var resetPanel = document.getElementById('authResetPassword');
-      if(resetPanel) resetPanel.style.display = 'block';
-
-      // Verify the code is valid
-      fbAuth.verifyPasswordResetCode(oobCode).then(function(email){
-        var msg = document.getElementById('resetMsg');
-        if(msg){ msg.textContent = 'Resetting password for: ' + email; msg.className = 'auth-msg info'; }
-      }).catch(function(){
-        var msg = document.getElementById('resetMsg');
-        if(msg){ msg.textContent = 'This reset link has expired or already been used. Please request a new one.'; msg.className = 'auth-msg error'; }
-        var btn = document.getElementById('resetSubmitBtn');
-        if(btn){ btn.disabled = true; btn.style.opacity = '0.4'; }
-      });
-
-      // Handle submit
-      document.getElementById('resetSubmitBtn').onclick = function(){
-        var newPass    = document.getElementById('resetNewPassword').value;
-        var confirmPass= document.getElementById('resetConfirmPassword').value;
-        var msg        = document.getElementById('resetMsg');
-        var btn        = document.getElementById('resetSubmitBtn');
-
-        if(newPass.length < 6){
-          msg.textContent = 'Password must be at least 6 characters.';
-          msg.className = 'auth-msg error'; return;
-        }
-        if(newPass !== confirmPass){
-          msg.textContent = 'Passwords do not match.';
-          msg.className = 'auth-msg error'; return;
-        }
-
-        btn.disabled = true; btn.textContent = 'Saving...';
-        fbAuth.confirmPasswordReset(oobCode, newPass).then(function(){
-          msg.textContent = '✅ Password updated! You can now log in with your new password.';
-          msg.className = 'auth-msg success';
-          btn.style.display = 'none';
-          // Clear reset mode and URL, then show login
-          window._resetModeActive = false;
-          setTimeout(function(){
-            window.history.replaceState({}, document.title, window.location.pathname);
-            if(resetPanel) resetPanel.style.display = 'none';
-            var loginPanel = document.getElementById('authLogin');
-            if(loginPanel) loginPanel.style.display = 'block';
-          }, 2500);
-        }).catch(function(err){
-          msg.textContent = 'Error: ' + (err.message || 'Could not reset password. Link may have expired.');
-          msg.className = 'auth-msg error';
-          btn.disabled = false; btn.textContent = '✅ SET NEW PASSWORD';
-        });
-      };
-
-      // Enter key support
-      ['resetNewPassword','resetConfirmPassword'].forEach(function(id){
-        var el = document.getElementById(id);
-        if(el) el.addEventListener('keypress', function(e){
-          if(e.key === 'Enter') document.getElementById('resetSubmitBtn').click();
-        });
-      });
-    }
-  });
-})();
-
 /* ======== EMAILJS — approval & notification emails ========
       Subject: "Your SIMPLIFLY account has been approved"
       Body: "Dear {{to_name}}, your SIMPLIFLY account has been approved by the admin.
@@ -2396,21 +2299,7 @@ textarea{resize:vertical;min-height:55px}
         <button class="auth-btn secondary" id="pendingLogoutBtn">SIGN OUT</button>
       </div>
     </div>
-    <!-- PASSWORD RESET PANEL — shown when user clicks link from email -->
-    <div id="authResetPassword" style="display:none">
-      <div class="auth-title">SET NEW PASSWORD</div>
-      <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:16px">Enter your new password below.</p>
-      <div class="auth-field">
-        <label>NEW PASSWORD (min 6 characters)</label>
-        <input type="password" id="resetNewPassword" placeholder="••••••••" autocomplete="new-password">
-      </div>
-      <div class="auth-field">
-        <label>CONFIRM NEW PASSWORD</label>
-        <input type="password" id="resetConfirmPassword" placeholder="••••••••" autocomplete="new-password">
-      </div>
-      <button class="auth-btn" id="resetSubmitBtn">✅ SET NEW PASSWORD</button>
-      <div class="auth-msg" id="resetMsg"></div>
-    </div>
+    <!-- (password reset handled by Firebase's own action page) -->
   </div>
 </div>
 
@@ -6809,8 +6698,6 @@ window.closeCrewPopup = function(){
   var _sessionListener = null; // holds onValue unsubscribe
 
   fbAuth.onAuthStateChanged(function(user){
-    // Don't interfere while password reset panel is showing
-    if(window._resetModeActive) return;
     if(!user){
       authScreen.classList.remove('hidden'); showPanel('login');
       document.getElementById('loginBtn').disabled=false; document.getElementById('loginBtn').textContent='LOGIN';
